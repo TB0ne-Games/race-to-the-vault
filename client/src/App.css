@@ -504,6 +504,76 @@ button:disabled {
   box-shadow: 0 0 8px var(--primary-glow);
 }
 
+.ai-difficulty-control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  padding: 1rem;
+  border-radius: 16px;
+  min-width: 200px;
+}
+
+.difficulty-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.difficulty-header .value {
+  color: var(--primary);
+}
+
+.difficulty-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  outline: none;
+  margin: 10px 0;
+}
+
+.difficulty-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--primary);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 10px var(--primary-glow);
+}
+
+.ai-inject-btn {
+  all: unset;
+  background: transparent;
+  color: var(--text-light);
+  font-weight: 700;
+  text-align: center;
+  font-size: 0.9rem;
+  padding: 0.5rem;
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ai-inject-btn:hover {
+  background: var(--primary);
+  color: black;
+  border-color: var(--primary);
+}
+
+.ai-inject-btn span {
+  display: block;
+  font-size: 0.7rem;
+  opacity: 0.6;
+}
+
 .player-card {
   position: relative;
   display: flex !important;

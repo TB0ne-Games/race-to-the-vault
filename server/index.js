@@ -300,7 +300,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('add_ai', ({ roomCode }) => {
+  socket.on('add_ai', ({ roomCode, difficulty }) => {
     if (rooms[roomCode] && rooms[roomCode].host === socket.id && !rooms[roomCode].gameStarted) {
       const room = rooms[roomCode];
       const aiPlayer = {
@@ -309,7 +309,8 @@ io.on('connection', (socket) => {
         role: null,
         hand: [],
         tools: { flashlight: true, drill: true, map: true },
-        isAI: true
+        isAI: true,
+        difficulty: difficulty || 5
       };
       room.players.push(aiPlayer);
       io.to(room.host).emit('player_joined', room.players);

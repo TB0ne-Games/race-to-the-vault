@@ -1,7 +1,12 @@
 import React from 'react';
 import TileRenderer from './TileRenderer';
 
-const HostView = ({ roomCode, players, gameStarted, onStartGame, onAddAI, grid, turnInfo }) => {
+const HostView = ({ roomCode, players, gameStarted, onStartGame, onAddAI, onRemoveAI, grid, turnInfo, aiDifficulty, setAiDifficulty }) => {
+    const getDifficultyLabel = (val) => {
+        if (val <= 3) return "EASY";
+        if (val <= 7) return "MEDIUM";
+        return "HARD";
+    };
     return (
         <div className="host-container">
             <div className="host-header">
@@ -10,15 +15,29 @@ const HostView = ({ roomCode, players, gameStarted, onStartGame, onAddAI, grid, 
                     <span className="code">{roomCode}</span>
                 </div>
                 {!gameStarted && (
-                    <div style={{ display: 'flex', gap: '1rem' }}>
+                    <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
                         <button className="primary" onClick={() => onStartGame(roomCode)} disabled={players.length < 3}>
                             INITIALIZE HEIST
                             <span>{players.length}/10 Agents</span>
                         </button>
-                        <button onClick={() => onAddAI(roomCode)}>
-                            INJECT AI AGENT
-                            <span>Automated Bot</span>
-                        </button>
+                        <div className="ai-difficulty-control">
+                            <div className="difficulty-header">
+                                <span className="label">AI LEVEL</span>
+                                <span className="value">{aiDifficulty} ({getDifficultyLabel(aiDifficulty)})</span>
+                            </div>
+                            <input
+                                type="range"
+                                min="1"
+                                max="10"
+                                value={aiDifficulty}
+                                onChange={(e) => setAiDifficulty(parseInt(e.target.value))}
+                                className="difficulty-slider"
+                            />
+                            <button className="ai-inject-btn" onClick={() => onAddAI(roomCode)}>
+                                INJECT AI AGENT
+                                <span>Add Bot</span>
+                            </button>
+                        </div>
                     </div>
                 )}
                 {gameStarted && turnInfo && (

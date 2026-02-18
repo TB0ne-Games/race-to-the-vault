@@ -23,6 +23,7 @@ function App() {
   const [roomPlayers, setRoomPlayers] = useState([]);
   const [winner, setWinner] = useState(null);
   const [notifications, setNotifications] = useState([]);
+  const [aiDifficulty, setAiDifficulty] = useState(5);
 
   const addNotification = (message, type = 'info') => {
     const id = Date.now();
@@ -112,7 +113,7 @@ function App() {
   };
 
   const handleAddAI = (code) => {
-    socket.emit('add_ai', { roomCode: code });
+    socket.emit('add_ai', { roomCode: code, difficulty: aiDifficulty });
   };
 
   const handleRemoveAI = (code, aiId) => {
@@ -192,6 +193,8 @@ function App() {
           onStartGame={handleStartGame}
           onAddAI={handleAddAI}
           onRemoveAI={handleRemoveAI}
+          aiDifficulty={aiDifficulty}
+          setAiDifficulty={setAiDifficulty}
           grid={board}
           turnInfo={turnInfo}
           gameStarted={!!board}

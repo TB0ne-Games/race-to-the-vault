@@ -4,6 +4,8 @@ import HostView from './components/HostView';
 import PlayerView from './components/PlayerView';
 import RevealRole from './components/RevealRole';
 import HandView from './components/HandView';
+import GameOver from './components/GameOver';
+import Notification from './components/Notification';
 import './App.css';
 
 const socket = io('http://localhost:3001');
@@ -18,7 +20,18 @@ function App() {
   const [hand, setHand] = useState([]);
   const [isMyTurn, setIsMyTurn] = useState(false);
   const [turnInfo, setTurnInfo] = useState(null);
-  const [roomPlayers, setRoomPlayers] = useState([]); // New state
+  const [roomPlayers, setRoomPlayers] = useState([]);
+  const [winner, setWinner] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+
+  const addNotification = (message, type = 'info') => {
+    const id = Date.now();
+    setNotifications(prev => [...prev, { id, message, type }]);
+  };
+
+  const removeNotification = (id) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  };
 
   useEffect(() => {
     socket.on('room_created', (code) => {
@@ -26,9 +39,7 @@ function App() {
       setView('host');
     });
 
-    socket.on('joined_room', ({ roomCode, playerName }) => {
-      setRoomCode(roomCode);
-      setName(playerName);
+    socket.on('joined_room', () => {
       setView('hand');
     });
 
@@ -42,7 +53,7 @@ function App() {
 
     socket.on('game_started', ({ role, hand }) => {
       setRole(role);
-      setHand(hand || []);
+      setHand(hand);
       setView('hand');
     });
 
@@ -60,15 +71,15 @@ function App() {
     });
 
     socket.on('game_over', ({ winner }) => {
-      alert(`Game Over! ${winner} Win!`);
+      setWinner(winner);
     });
 
     socket.on('intel_reveal', ({ r, c, hasMoney }) => {
-      alert(`INTEL: Vault at (${r},${c}) ${hasMoney ? "CONTAINS THE MONEY! 💰" : "is EMPTY. ❌"}`);
+      addNotification(`INTEL: Vault (${r},${c}) is ${hasMoney ? "LOADED 💰" : "EMPTY ❌"}`, 'intel');
     });
 
     socket.on('error', (message) => {
-      alert(message);
+      addNotification(message, 'info');
     });
 
     return () => {
@@ -77,15 +88,22 @@ function App() {
       socket.off('player_joined');
       socket.off('board_update');
       socket.off('game_started');
+      socket.off('hand_update');
+      socket.off('your_turn');
+      socket.off('turn_update');
+      socket.off('game_over');
+      socket.off('intel_reveal');
       socket.off('error');
     };
   }, []);
 
-  const handleCreateRoom = () => {
+  const createRoom = () => {
     socket.emit('create_room');
   };
 
-  const handleJoinRoom = (playerName, code) => {
+  const joinRoom = (playerName, code) => {
+    setName(playerName);
+    setRoomCode(code);
     socket.emit('join_room', { roomCode: code, playerName });
   };
 
@@ -93,9 +111,30 @@ function App() {
     socket.emit('start_game', code);
   };
 
-  if (view === 'lobby') {
-    return (
-      <div className="app-container">
+  const resetGame = () => {
+    setWinner(null);
+    setRole(null);
+    setHand([]);
+    setBoard(null);
+    setView('lobby');
+    setRoomCode('');
+    setName('');
+    setPlayers([]);
+    setIsMyTurn(false);
+    setTurnInfo(null);
+    setRoomPlayers([]);
+    setNotifications([]);
+  };
+
+  return (
+    <div className="app-container">
+      <Notification notifications={notifications} onRemove={removeNotification} />
+
+      {winner && (
+        <GameOver winner={winner} onRestart={resetGame} />
+      )}
+
+      {view === 'lobby' && (
         <div className="glass-panel lobby">
           <h1>RACE TO THE VAULT</h1>
           <div className="lobby-options">
@@ -110,13 +149,9 @@ function App() {
             </button>
           </div>
         </div>
-      </div>
-    );
-  }
+      )}
 
-  if (view === 'join') {
-    return (
-      <div className="app-container">
+      {view === 'join' && (
         <div className="glass-panel">
           <h1>JOIN HEIST</h1>
           <div className="join-form">
@@ -132,20 +167,16 @@ function App() {
               <input
                 className="form-input"
                 placeholder="YOUR NAME"
-                value={playerName}
-                onChange={(e) => setPlayerName(e.target.value)}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
               />
             </div>
-            <button className="primary" onClick={joinRoom}>AUTHORIZE ENTRY</button>
+            <button className="primary" onClick={() => joinRoom(name, roomCode)}>AUTHORIZE ENTRY</button>
             <button onClick={() => setView('lobby')}>CANCEL</button>
           </div>
         </div>
-      </div>
-    );
-  }
+      )}
 
-  return (
-    <div className="app-container">
       {view === 'host' && (
         <HostView
           roomCode={roomCode}
@@ -174,7 +205,7 @@ function App() {
             </div>
           ) : (
             <div className="game-active-view">
-              <RevealRole role={role} name={name} />
+              <RevealRole role={role} onComplete={() => { }} />
               <HandView
                 hand={hand}
                 isMyTurn={isMyTurn}

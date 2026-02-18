@@ -1,112 +1,76 @@
 import React from 'react';
+import TileRenderer from './TileRenderer';
 
-const HostView = ({ roomCode, players, onStart, board, turnInfo }) => {
-    if (!board) {
-        return (
-            <div className="host-container">
-                <div className="header">
-                    <h1>Vault Heist</h1>
-                    <div className="room-info">
-                        <span>Room Code:</span>
-                        <span className="code">{roomCode}</span>
-                    </div>
-                </div>
-
-                <div className="player-list">
-                    <h2>Joined Players ({players.length})</h2>
-                    <div className="players-grid">
-                        {players.length === 0 ? (
-                            <p className="empty-message">Waiting for players to join...</p>
-                        ) : (
-                            players.map((player) => (
-                                <div key={player.id} className="player-card">
-                                    <span className="player-name">{player.name}</span>
-                                    <span className="status">Ready</span>
-                                </div>
-                            ))
-                        )}
-                    </div>
-                </div>
-
-                <div className="footer">
-                    <button
-                        className="start-button"
-                        disabled={players.length < 3}
-                        onClick={() => onStart(roomCode)}
-                    >
-                        {players.length < 3 ? 'Need 3+ Players' : 'Start Game'}
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
+const HostView = ({ roomCode, players, gameStarted, onStartGame, grid, turnInfo }) => {
     return (
-        <div className="game-host-container">
-            <div className="game-header">
-                <div>
-                    <h1>Vault Heist</h1>
-                    {turnInfo && (
-                        <div className="turn-banner">
-                            Current Turn: <span className="active-player">{turnInfo.currentPlayer}</span>
-                        </div>
-                    )}
+        <div className="host-container">
+            <div className="host-header">
+                <div className="room-badge">
+                    <span className="label">Room Code</span>
+                    <span className="code">{roomCode}</span>
                 </div>
-                <div className="right-stats">
-                    <div className="game-status">{turnInfo ? 'Heist Active' : 'Waiting'}</div>
-                    {turnInfo && (
-                        <div className="deck-count">
-                            Deck: <strong>{turnInfo.deckCount}</strong> cards
-                        </div>
-                    )}
+                {!gameStarted && (
+                    <button className="primary" onClick={onStartGame} disabled={players.length < 3}>
+                        INITIALIZE HEIST
+                        <span>{players.length}/10 Players</span>
+                    </button>
+                )}
+                {gameStarted && turnInfo && (
+                    <div className="turn-banner">
+                        ACTIVE AGENT: <span className="active-player">{turnInfo.currentPlayer}</span>
+                    </div>
+                )}
+                <div className="room-badge">
+                    <span className="label">DECK</span>
+                    <span className="code">{turnInfo?.deckCount || 0}</span>
                 </div>
             </div>
 
-            <div className="board-grid">
-                {board.map((row, rIdx) => (
-                    row.map((cell, cIdx) => (
-                        <div key={`${rIdx}-${cIdx}`} className={`grid-cell ${cell ? 'has-card' : ''}`}>
-                            {cell && (
-                                <div className={`card-tile ${cell.type}`}>
-                                    {cell.type === 'entrance' && <div className="entrance-label">ENTRANCE</div>}
-                                    {cell.type === 'vault' && (
-                                        <div className={`vault-label ${cell.revealed ? 'revealed' : ''}`}>
-                                            {cell.revealed ? (cell.hasMoney ? '💰' : '💎') : 'VAULT'}
-                                        </div>
-                                    )}
-                                    {cell.type === 'path' && (
-                                        <div className="path-lines">
-                                            {cell.top && <div className="line top"></div>}
-                                            {cell.bottom && <div className="line bottom"></div>}
-                                            {cell.left && <div className="line left"></div>}
-                                            {cell.right && <div className="line right"></div>}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    ))
-                ))}
-            </div>
-
-            <div className="game-footer">
-                <div className="active-players">
-                    {players.map(p => (
-                        <div className={`small-player-card ${turnInfo?.currentPlayer === p.name ? 'active' : ''}`} key={p.id}>
-                            <div className="player-meta">
-                                <span className="player-name">{p.name}</span>
-                                {p.tools && (
-                                    <div className="player-tools">
-                                        <span title="Flashlight" className={p.tools.flashlight ? 'tool-ok' : 'tool-broken'}>🔦</span>
-                                        <span title="Drill" className={p.tools.drill ? 'tool-ok' : 'tool-broken'}>⚙️</span>
-                                        <span title="Map" className={p.tools.map ? 'tool-ok' : 'tool-broken'}>🗺️</span>
-                                    </div>
-                                )}
+            {!gameStarted ? (
+                <div className="glass-panel lobby-players" style={{ maxWidth: '800px', margin: '0 auto' }}>
+                    <h2 style={{ textAlign: 'center', marginBottom: '2rem' }}>SECURE LOBBY</h2>
+                    <div className="players-grid">
+                        {players.map(player => (
+                            <div key={player.id} className="player-card">
+                                <div className="status-indicator"></div>
+                                {player.name}
                             </div>
-                        </div>
+                        ))}
+                    </div>
+                    {players.length < 3 && <p className="hint" style={{ textAlign: 'center', marginTop: '2rem', opacity: 0.6 }}>MINIMUM 3 AGENTS REQUIRED TO START</p>}
+                </div>
+            ) : (
+                <div className="board-grid">
+                    {grid && grid.map((row, r) => (
+                        row.map((tile, c) => (
+                            <div key={`${r}-${c}`} className="grid-cell">
+                                <TileRenderer tile={tile} />
+                            </div>
+                        ))
                     ))}
                 </div>
-            </div>
+            )}
+
+            {gameStarted && (
+                <div className="game-footer">
+                    <div className="active-players">
+                        {players.map(p => (
+                            <div className={`small-player-card ${turnInfo?.currentPlayer === p.name ? 'active' : ''}`} key={p.id}>
+                                <div className="player-meta">
+                                    <span className="player-name">{p.name}</span>
+                                    {p.tools && (
+                                        <div className="player-tools">
+                                            <span title="Flashlight" className={p.tools.flashlight ? 'tool-ok' : 'tool-broken'}>🔦</span>
+                                            <span title="Drill" className={p.tools.drill ? 'tool-ok' : 'tool-broken'}>⚙️</span>
+                                            <span title="Map" className={p.tools.map ? 'tool-ok' : 'tool-broken'}>🗺️</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

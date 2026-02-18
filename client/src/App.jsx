@@ -93,39 +93,59 @@ function App() {
     socket.emit('start_game', code);
   };
 
-  return (
-    <div className="app-container">
-      {view === 'lobby' && (
-        <div className="lobby">
-          <h1>Vault Heist</h1>
+  if (view === 'lobby') {
+    return (
+      <div className="app-container">
+        <div className="glass-panel lobby">
+          <h1>RACE TO THE VAULT</h1>
           <div className="lobby-options">
-            <button
-              type="button"
-              className="host-btn"
-              onClick={() => {
-                console.log('Host a Game clicked');
-                handleCreateRoom();
-              }}
-            >
-              Host a Game
-              <span>Display on big screen</span>
+            <button className="primary" onClick={createRoom}>
+              CREATE PRIVATE ROOM
+              <span>Be the Host</span>
             </button>
             <div className="divider">OR</div>
-            <button
-              type="button"
-              className="join-btn"
-              onClick={() => {
-                console.log('Join a Game clicked');
-                setView('player');
-              }}
-            >
-              Join a Game
-              <span>Play on your phone</span>
+            <button onClick={() => setView('join')}>
+              JOIN EXISTING VAULT
+              <span>Use Room Code</span>
             </button>
           </div>
         </div>
-      )}
+      </div>
+    );
+  }
 
+  if (view === 'join') {
+    return (
+      <div className="app-container">
+        <div className="glass-panel">
+          <h1>JOIN HEIST</h1>
+          <div className="join-form">
+            <div className="input-group">
+              <input
+                className="form-input"
+                placeholder="ROOM CODE"
+                value={roomCode}
+                onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+              />
+            </div>
+            <div className="input-group">
+              <input
+                className="form-input"
+                placeholder="YOUR NAME"
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value)}
+              />
+            </div>
+            <button className="primary" onClick={joinRoom}>AUTHORIZE ENTRY</button>
+            <button onClick={() => setView('lobby')}>CANCEL</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="app-container">
       {view === 'host' && (
         <HostView
           roomCode={roomCode}
@@ -137,7 +157,7 @@ function App() {
       )}
 
       {view === 'player' && (
-        <PlayerView onJoin={handleJoinRoom} />
+        <PlayerView onJoin={joinRoom} />
       )}
 
       {view === 'hand' && (

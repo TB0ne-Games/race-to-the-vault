@@ -12,40 +12,38 @@ const PlayerView = ({ onJoin }) => {
     };
 
     return (
-        <div className="player-container">
-            <div className="header">
-                <h1>Vault Heist</h1>
-                <p>Join the Crew</p>
-            </div>
+        <div className="glass-panel" style={{ maxWidth: '400px' }}>
+            <h1 style={{ fontSize: '2.5rem' }}>AGENT AUTH</h1>
+            <p style={{ textAlign: 'center', color: 'var(--text-dim)', marginBottom: '2rem' }}>ENTER CREDENTIALS TO JOIN THE CREW</p>
 
-            <form onSubmit={handleSubmit} className="join-form">
+            <form onSubmit={handleSubmit} className="join-form" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 <div className="input-group">
-                    <label htmlFor="name">Agent Name</label>
                     <input
-                        id="name"
+                        className="form-input"
                         type="text"
-                        placeholder="Enter your name"
+                        placeholder="AGENT ALIAS"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         required
+                        style={{ width: '100%', marginBottom: '0' }}
                     />
                 </div>
 
                 <div className="input-group">
-                    <label htmlFor="roomCode">Room Code</label>
                     <input
-                        id="roomCode"
+                        className="form-input"
                         type="text"
-                        placeholder="6-character code"
+                        placeholder="ROOM ACCESS CODE"
                         value={roomCode}
-                        onChange={(e) => setRoomCode(e.target.value)}
+                        onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
                         maxLength={6}
                         required
+                        style={{ width: '100%', marginBottom: '0' }}
                     />
                 </div>
 
-                <button type="submit" className="join-button">
-                    Join Heist
+                <button type="submit" className="primary">
+                    AUTHORIZE ENTRY
                 </button>
             </form>
         </div>

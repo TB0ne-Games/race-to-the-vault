@@ -316,6 +316,14 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('remove_ai', ({ roomCode, aiId }) => {
+    if (rooms[roomCode] && rooms[roomCode].host === socket.id && !rooms[roomCode].gameStarted) {
+      const room = rooms[roomCode];
+      room.players = room.players.filter(p => p.id !== aiId);
+      io.to(room.host).emit('player_joined', room.players);
+    }
+  });
+
   socket.on('start_game', (roomCode) => {
     if (rooms[roomCode] && rooms[roomCode].host === socket.id) {
       const room = rooms[roomCode];

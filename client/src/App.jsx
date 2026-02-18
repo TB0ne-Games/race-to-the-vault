@@ -115,6 +115,10 @@ function App() {
     socket.emit('add_ai', { roomCode: code });
   };
 
+  const handleRemoveAI = (code, aiId) => {
+    socket.emit('remove_ai', { roomCode: code, aiId });
+  };
+
   const resetGame = () => {
     setWinner(null);
     setRole(null);
@@ -187,6 +191,7 @@ function App() {
           players={players}
           onStartGame={handleStartGame}
           onAddAI={handleAddAI}
+          onRemoveAI={handleRemoveAI}
           grid={board}
           turnInfo={turnInfo}
           gameStarted={!!board}

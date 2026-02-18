@@ -504,6 +504,39 @@ button:disabled {
   box-shadow: 0 0 8px var(--primary-glow);
 }
 
+.player-card {
+  position: relative;
+  display: flex !important;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.remove-ai-btn {
+  all: unset;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: rgba(255, 77, 109, 0.2);
+  border: 1px solid rgba(255, 77, 109, 0.3);
+  border-radius: 50%;
+  color: var(--danger);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  margin-left: 10px;
+}
+
+.remove-ai-btn:hover {
+  background: var(--danger);
+  color: white;
+  transform: scale(1.1);
+  box-shadow: 0 0 10px rgba(255, 77, 109, 0.4);
+}
+
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
   h1 {

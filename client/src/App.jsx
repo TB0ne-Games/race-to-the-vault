@@ -111,6 +111,10 @@ function App() {
     socket.emit('start_game', code);
   };
 
+  const handleAddAI = (code) => {
+    socket.emit('add_ai', { roomCode: code });
+  };
+
   const resetGame = () => {
     setWinner(null);
     setRole(null);
@@ -182,6 +186,7 @@ function App() {
           roomCode={roomCode}
           players={players}
           onStartGame={handleStartGame}
+          onAddAI={handleAddAI}
           grid={board}
           turnInfo={turnInfo}
           gameStarted={!!board}

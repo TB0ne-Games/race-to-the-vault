@@ -164,6 +164,97 @@ const SHUFFLE_DECK = (deck) => {
   }
 };
 
+const handleAITurn = (room, roomCode) => {
+  const currentPlayer = room.players[room.currentPlayerIndex];
+  if (!currentPlayer || !currentPlayer.isAI || room.winner) return;
+
+  console.log(`AI Turn: ${currentPlayer.name} is thinking...`);
+
+  setTimeout(() => {
+    // 1. Try to play a path card if possible
+    const pathCards = currentPlayer.hand.filter(c => c.type !== 'action');
+    let moveMade = false;
+
+    // Check if tools are okay
+    const brokenTools = Object.keys(currentPlayer.tools).filter(t => !currentPlayer.tools[t]);
+
+    if (brokenTools.length === 0) {
+      const possiblePositions = [];
+      for (let r = 0; r < 5; r++) {
+        for (let c = 1; c < 9; c++) {
+          possiblePositions.push({ r, c });
+        }
+      }
+      for (let i = possiblePositions.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [possiblePositions[i], possiblePositions[j]] = [possiblePositions[j], possiblePositions[i]];
+      }
+
+      for (const card of pathCards) {
+        for (const pos of possiblePositions) {
+          if (CAN_PLACE_CARD(room.grid, pos.r, pos.c, card)) {
+            room.grid[pos.r][pos.c] = { ...card, type: 'path' };
+            currentPlayer.hand = currentPlayer.hand.filter(h => h.id !== card.id);
+            if (room.deck.length > 0) currentPlayer.hand.push(room.deck.pop());
+
+            const directions = [
+              { dr: -1, dc: 0, door: 'top', opp: 'bottom' },
+              { dr: 1, dc: 0, door: 'bottom', opp: 'top' },
+              { dr: 0, dc: -1, door: 'left', opp: 'right' },
+              { dr: 0, dc: 1, door: 'right', opp: 'left' }
+            ];
+            directions.forEach(({ dr, dc, door, opp }) => {
+              const nextR = pos.r + dr;
+              const nextC = pos.c + dc;
+              if (nextR >= 0 && nextR < 5 && nextC >= 0 && nextC < 9) {
+                const neighbor = room.grid[nextR][nextC];
+                if (neighbor && neighbor.type === 'vault' && !neighbor.revealed) {
+                  if (card[door] && IS_CONNECTED_TO_START(room.grid, pos.r, pos.c)) {
+                    neighbor.revealed = true;
+                    if (neighbor.hasMoney) {
+                      room.winner = 'Robbers';
+                      io.to(roomCode).emit('game_over', { winner: 'Robbers' });
+                    }
+                  }
+                }
+              }
+            });
+
+            moveMade = true;
+            break;
+          }
+        }
+        if (moveMade) break;
+      }
+    }
+
+    if (!moveMade) {
+      console.log(`AI ${currentPlayer.name} passing (no valid move found or tools broken).`);
+    }
+
+    room.currentPlayerIndex = (room.currentPlayerIndex + 1) % room.players.length;
+    const nextPlayer = room.players[room.currentPlayerIndex];
+
+    io.to(roomCode).emit('board_update', room.grid);
+    io.to(roomCode).emit('turn_update', {
+      currentPlayer: nextPlayer.name,
+      deckCount: room.deck.length,
+      players: room.players.map(p => ({ id: p.id, name: p.name, tools: p.tools, isAI: p.isAI }))
+    });
+
+    if (nextPlayer.isAI) {
+      handleAITurn(room, roomCode);
+    } else {
+      io.to(nextPlayer.id).emit('your_turn', true);
+    }
+
+    if (room.deck.length === 0 && room.players.every(p => p.hand.length === 0) && !room.winner) {
+      room.winner = 'Cops';
+      io.to(roomCode).emit('game_over', { winner: 'Cops' });
+    }
+  }, 1500);
+};
+
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
@@ -172,7 +263,6 @@ io.on('connection', (socket) => {
     rooms[roomCode] = { host: socket.id, players: [] };
     socket.join(roomCode);
     socket.emit('room_created', roomCode);
-    console.log(`Room created: ${roomCode}`);
   });
 
   socket.on('join_room', ({ roomCode, playerName }) => {
@@ -182,17 +272,31 @@ io.on('connection', (socket) => {
         name: playerName,
         role: null,
         hand: [],
-        tools: { flashlight: true, drill: true, map: true }
+        tools: { flashlight: true, drill: true, map: true },
+        isAI: false
       };
       rooms[roomCode].players.push(player);
       socket.join(roomCode);
       socket.emit('joined_room', { roomCode, playerName });
-
-      // Notify host
       io.to(rooms[roomCode].host).emit('player_joined', rooms[roomCode].players);
-      console.log(`Player ${playerName} joined room ${roomCode}`);
     } else {
       socket.emit('error', 'Room not found');
+    }
+  });
+
+  socket.on('add_ai', ({ roomCode }) => {
+    if (rooms[roomCode] && rooms[roomCode].host === socket.id && !rooms[roomCode].gameStarted) {
+      const room = rooms[roomCode];
+      const aiPlayer = {
+        id: `ai-${Math.random().toString(36).substr(2, 9)}`,
+        name: `BOT ${room.players.length + 1}`,
+        role: null,
+        hand: [],
+        tools: { flashlight: true, drill: true, map: true },
+        isAI: true
+      };
+      room.players.push(aiPlayer);
+      io.to(room.host).emit('player_joined', room.players);
     }
   });
 
@@ -200,67 +304,39 @@ io.on('connection', (socket) => {
     if (rooms[roomCode] && rooms[roomCode].host === socket.id) {
       const room = rooms[roomCode];
       const playerCount = room.players.length;
-
-      // Initialize board and shuffle vaults
       room.grid = INITIAL_BOARD(5, 9);
       SHUFFLE_VAULTS(room.grid);
-
-      // Initialize deck
       room.deck = CREATE_DECK();
       SHUFFLE_DECK(room.deck);
-
       room.gameStarted = true;
       room.currentPlayerIndex = 0;
       room.winner = null;
 
-      // Saboteur-like role distribution
-      let copCount = 1;
-      if (playerCount >= 5) copCount = 2;
-      if (playerCount >= 7) copCount = 3;
-
-      let roles = [];
-      for (let i = 0; i < copCount; i++) roles.push('Cop');
-      for (let i = 0; i < playerCount - copCount; i++) roles.push('Robber');
-
-      // Shuffle roles
+      let copCount = Math.max(1, Math.floor(playerCount / 3));
+      let roles = Array(copCount).fill('Cop').concat(Array(playerCount - copCount).fill('Robber'));
       for (let i = roles.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [roles[i], roles[j]] = [roles[j], roles[i]];
       }
 
       const handSize = playerCount <= 5 ? 6 : 5;
-
-      room.players.forEach((player, idx) => {
-        player.role = roles[idx];
-        player.hand = [];
-        for (let i = 0; i < handSize; i++) {
-          if (room.deck.length > 0) {
-            player.hand.push(room.deck.pop());
-          }
-        }
-
-        console.log(`DEBUG: Player ${player.name} (${player.id}) getting role ${player.role} and hand size ${player.hand.length}`);
-        const startData = {
-          role: player.role,
-          hand: player.hand
-        };
-        console.log(`DEBUG: Emitting game_started with:`, JSON.stringify(startData));
-        io.to(player.id).emit('game_started', startData);
+      room.players.forEach((p, i) => {
+        p.role = roles[i];
+        p.hand = [];
+        for (let j = 0; j < handSize; j++) if (room.deck.length > 0) p.hand.push(room.deck.pop());
+        if (!p.isAI) io.to(p.id).emit('game_started', { role: p.role, hand: p.hand });
       });
 
-      // Notify host of the initial board and turn status
       io.to(room.host).emit('board_update', room.grid);
       io.to(room.host).emit('turn_update', {
         currentPlayer: room.players[room.currentPlayerIndex].name,
-        deckCount: room.deck.length
+        deckCount: room.deck.length,
+        players: room.players.map(p => ({ id: p.id, name: p.name, tools: p.tools, isAI: p.isAI }))
       });
 
-      // Also notify the active player
-      io.to(room.players[room.currentPlayerIndex].id).emit('your_turn', true);
-
-      console.log(`Game started in room ${roomCode}. Deck initialized and roles/hands distributed.`);
-    } else {
-      console.log(`Start game failed: room ${roomCode} not found or not host`);
+      const firstPlayer = room.players[room.currentPlayerIndex];
+      if (firstPlayer.isAI) handleAITurn(room, roomCode);
+      else io.to(firstPlayer.id).emit('your_turn', true);
     }
   });
 
@@ -268,48 +344,24 @@ io.on('connection', (socket) => {
     if (rooms[roomCode] && rooms[roomCode].gameStarted) {
       const room = rooms[roomCode];
       const currentPlayer = room.players[room.currentPlayerIndex];
+      if (socket.id !== currentPlayer.id) return socket.emit('error', 'Not your turn!');
 
-      // Turn validation
-      if (socket.id !== currentPlayer.id) {
-        return socket.emit('error', 'Not your turn!');
-      }
-
-      // Tool validation: Can't place path if any tool is broken
       const brokenTools = Object.keys(currentPlayer.tools).filter(t => !currentPlayer.tools[t]);
-      if (brokenTools.length > 0) {
-        return socket.emit('error', `Cannot place paths! Tool broken: ${brokenTools.join(', ')}`);
-      }
+      if (brokenTools.length > 0) return socket.emit('error', 'Tools broken!');
 
       if (CAN_PLACE_CARD(room.grid, r, c, card)) {
         room.grid[r][c] = { ...card, type: 'path' };
-
-        // Remove card from player's hand
         currentPlayer.hand = currentPlayer.hand.filter(h => h.id !== card.id);
-
-        // Draw a new card
-        if (room.deck.length > 0) {
-          currentPlayer.hand.push(room.deck.pop());
-        }
-
-        // Notify client of hand/turn update
+        if (room.deck.length > 0) currentPlayer.hand.push(room.deck.pop());
         socket.emit('hand_update', currentPlayer.hand);
         socket.emit('your_turn', false);
 
-        // Check for vault reveals
-        const directions = [
-          { dr: -1, dc: 0, door: 'top', opp: 'bottom' },
-          { dr: 1, dc: 0, door: 'bottom', opp: 'top' },
-          { dr: 0, dc: -1, door: 'left', opp: 'right' },
-          { dr: 0, dc: 1, door: 'right', opp: 'left' }
-        ];
-
+        const directions = [{ dr: -1, dc: 0, door: 'top', opp: 'bottom' }, { dr: 1, dc: 0, door: 'bottom', opp: 'top' }, { dr: 0, dc: -1, door: 'left', opp: 'right' }, { dr: 0, dc: 1, door: 'right', opp: 'left' }];
         directions.forEach(({ dr, dc, door, opp }) => {
-          const nextR = r + dr;
-          const nextC = c + dc;
+          const nextR = r + dr, nextC = c + dc;
           if (nextR >= 0 && nextR < 5 && nextC >= 0 && nextC < 9) {
             const neighbor = room.grid[nextR][nextC];
             if (neighbor && neighbor.type === 'vault' && !neighbor.revealed) {
-              // Check if path connects to vault door
               if (card[door] && IS_CONNECTED_TO_START(room.grid, r, c)) {
                 neighbor.revealed = true;
                 if (neighbor.hasMoney) {
@@ -321,22 +373,18 @@ io.on('connection', (socket) => {
           }
         });
 
-        // Advance turn
         room.currentPlayerIndex = (room.currentPlayerIndex + 1) % room.players.length;
         const nextPlayer = room.players[room.currentPlayerIndex];
-
-        // Notify host
-        io.to(room.host).emit('board_update', room.grid);
-        io.to(room.host).emit('turn_update', {
+        io.to(roomCode).emit('board_update', room.grid);
+        io.to(roomCode).emit('turn_update', {
           currentPlayer: nextPlayer.name,
           deckCount: room.deck.length,
-          players: room.players.map(p => ({ id: p.id, name: p.name, tools: p.tools }))
+          players: room.players.map(p => ({ id: p.id, name: p.name, tools: p.tools, isAI: p.isAI }))
         });
 
-        // Notify next player
-        io.to(nextPlayer.id).emit('your_turn', true);
+        if (nextPlayer.isAI) handleAITurn(room, roomCode);
+        else io.to(nextPlayer.id).emit('your_turn', true);
 
-        // Check for Cop victory (Deck empty and all hands empty)
         if (room.deck.length === 0 && room.players.every(p => p.hand.length === 0) && !room.winner) {
           room.winner = 'Cops';
           io.to(roomCode).emit('game_over', { winner: 'Cops' });
@@ -351,9 +399,7 @@ io.on('connection', (socket) => {
     if (rooms[roomCode] && rooms[roomCode].gameStarted) {
       const room = rooms[roomCode];
       const currentPlayer = room.players[room.currentPlayerIndex];
-
       if (socket.id !== currentPlayer.id) return socket.emit('error', 'Not your turn!');
-
       let actionSuccess = false;
 
       if (actionCard.action === 'map') {
@@ -383,42 +429,34 @@ io.on('connection', (socket) => {
       }
 
       if (actionSuccess) {
-        // Remove card from hand
         currentPlayer.hand = currentPlayer.hand.filter(h => h.id !== actionCard.id);
         if (room.deck.length > 0) currentPlayer.hand.push(room.deck.pop());
-
-        // Notify and advance
         socket.emit('hand_update', currentPlayer.hand);
         socket.emit('your_turn', false);
-
         room.currentPlayerIndex = (room.currentPlayerIndex + 1) % room.players.length;
         const nextPlayer = room.players[room.currentPlayerIndex];
-
-        io.to(room.host).emit('board_update', room.grid);
-        io.to(room.host).emit('turn_update', {
+        io.to(roomCode).emit('board_update', room.grid);
+        io.to(roomCode).emit('turn_update', {
           currentPlayer: nextPlayer.name,
           deckCount: room.deck.length,
-          players: room.players.map(p => ({ id: p.id, name: p.name, tools: p.tools }))
+          players: room.players.map(p => ({ id: p.id, name: p.name, tools: p.tools, isAI: p.isAI }))
         });
-        io.to(nextPlayer.id).emit('your_turn', true);
 
-        // Check for Cop victory (Deck empty and all hands empty)
+        if (nextPlayer.isAI) handleAITurn(room, roomCode);
+        else io.to(nextPlayer.id).emit('your_turn', true);
+
         if (room.deck.length === 0 && room.players.every(p => p.hand.length === 0) && !room.winner) {
           room.winner = 'Cops';
           io.to(roomCode).emit('game_over', { winner: 'Cops' });
         }
       } else {
-        socket.emit('error', 'Action failed or invalid target');
+        socket.emit('error', 'Action failed');
       }
     }
   });
 
-  socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
-  });
+  socket.on('disconnect', () => console.log('User disconnected:', socket.id));
 });
 
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

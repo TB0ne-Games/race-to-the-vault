@@ -10,10 +10,16 @@ const HostView = ({ roomCode, players, gameStarted, onStartGame, grid, turnInfo 
                     <span className="code">{roomCode}</span>
                 </div>
                 {!gameStarted && (
-                    <button className="primary" onClick={onStartGame} disabled={players.length < 3}>
-                        INITIALIZE HEIST
-                        <span>{players.length}/10 Players</span>
-                    </button>
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                        <button className="primary" onClick={onStartGame} disabled={players.length < 3}>
+                            INITIALIZE HEIST
+                            <span>{players.length}/10 Players</span>
+                        </button>
+                        <button onClick={() => onAddAI(roomCode)}>
+                            INJECT AI AGENT
+                            <span>Automated Bot</span>
+                        </button>
+                    </div>
                 )}
                 {gameStarted && turnInfo && (
                     <div className="turn-banner">
@@ -31,9 +37,9 @@ const HostView = ({ roomCode, players, gameStarted, onStartGame, grid, turnInfo 
                     <h2 style={{ textAlign: 'center', marginBottom: '2rem' }}>SECURE LOBBY</h2>
                     <div className="players-grid">
                         {players.map(player => (
-                            <div key={player.id} className="player-card">
+                            <div key={player.id} className={`player-card ${player.isAI ? 'is-ai' : ''}`}>
                                 <div className="status-indicator"></div>
-                                {player.name}
+                                {player.name} {player.isAI ? '🤖' : ''}
                             </div>
                         ))}
                     </div>
@@ -55,9 +61,9 @@ const HostView = ({ roomCode, players, gameStarted, onStartGame, grid, turnInfo 
                 <div className="game-footer">
                     <div className="active-players">
                         {players.map(p => (
-                            <div className={`small-player-card ${turnInfo?.currentPlayer === p.name ? 'active' : ''}`} key={p.id}>
+                            <div className={`small-player-card ${turnInfo?.currentPlayer === p.name ? 'active' : ''} ${p.isAI ? 'is-ai' : ''}`} key={p.id}>
                                 <div className="player-meta">
-                                    <span className="player-name">{p.name}</span>
+                                    <span className="player-name">{p.name} {p.isAI ? '🤖' : ''}</span>
                                     {p.tools && (
                                         <div className="player-tools">
                                             <span title="Flashlight" className={p.tools.flashlight ? 'tool-ok' : 'tool-broken'}>🔦</span>

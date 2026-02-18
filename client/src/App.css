@@ -486,3 +486,19 @@ button:disabled {
   font-size: 0.9rem;
   font-weight: 500;
 }
+
+/* AI Player Styling */
+.player-card.is-ai {
+  border-left: 4px solid var(--primary-glow);
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.small-player-card.is-ai {
+  opacity: 0.8;
+  border-style: dashed;
+}
+
+.is-ai .status-indicator {
+  background: var(--primary);
+  box-shadow: 0 0 8px var(--primary-glow);
+}

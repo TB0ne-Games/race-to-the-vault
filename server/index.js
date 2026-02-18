@@ -168,44 +168,48 @@ const handleAITurn = (room, roomCode) => {
   const currentPlayer = room.players[room.currentPlayerIndex];
   if (!currentPlayer || !currentPlayer.isAI || room.winner) return;
 
-  console.log(`AI Turn: ${currentPlayer.name} is thinking...`);
+  console.log(`AI Turn: ${currentPlayer.name} (${currentPlayer.role}) is thinking...`);
 
   setTimeout(() => {
-    // 1. Try to play a path card if possible
-    const pathCards = currentPlayer.hand.filter(c => c.type !== 'action');
+    const pathCards = currentPlayer.hand.filter(c => !c.type || c.type === 'path');
     let moveMade = false;
 
     // Check if tools are okay
     const brokenTools = Object.keys(currentPlayer.tools).filter(t => !currentPlayer.tools[t]);
 
     if (brokenTools.length === 0) {
+      // Tactical sorting: Robbers prefer non-deadends, Cops prefer deadends or blocking
+      const tacticalPathCards = [...pathCards].sort((a, b) => {
+        if (currentPlayer.role === 'Robber') return (a.deadEnd ? 1 : 0) - (b.deadEnd ? 1 : 0);
+        if (currentPlayer.role === 'Cop') return (b.deadEnd ? 1 : 0) - (a.deadEnd ? 1 : 0);
+        return 0;
+      });
+
       const possiblePositions = [];
       for (let r = 0; r < 5; r++) {
         for (let c = 1; c < 9; c++) {
           possiblePositions.push({ r, c });
         }
       }
+
+      // Shuffle positions briefly to avoid predictable patterns
       for (let i = possiblePositions.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [possiblePositions[i], possiblePositions[j]] = [possiblePositions[j], possiblePositions[i]];
       }
 
-      for (const card of pathCards) {
+      for (const card of tacticalPathCards) {
         for (const pos of possiblePositions) {
           if (CAN_PLACE_CARD(room.grid, pos.r, pos.c, card)) {
+            console.log(`AI ${currentPlayer.name} plays ${card.deadEnd ? 'DEAD-END' : 'PATH'} at ${pos.r},${pos.c}`);
             room.grid[pos.r][pos.c] = { ...card, type: 'path' };
             currentPlayer.hand = currentPlayer.hand.filter(h => h.id !== card.id);
             if (room.deck.length > 0) currentPlayer.hand.push(room.deck.pop());
 
-            const directions = [
-              { dr: -1, dc: 0, door: 'top', opp: 'bottom' },
-              { dr: 1, dc: 0, door: 'bottom', opp: 'top' },
-              { dr: 0, dc: -1, door: 'left', opp: 'right' },
-              { dr: 0, dc: 1, door: 'right', opp: 'left' }
-            ];
+            // Victory/Connect logic
+            const directions = [{ dr: -1, dc: 0, door: 'top', opp: 'bottom' }, { dr: 1, dc: 0, door: 'bottom', opp: 'top' }, { dr: 0, dc: -1, door: 'left', opp: 'right' }, { dr: 0, dc: 1, door: 'right', opp: 'left' }];
             directions.forEach(({ dr, dc, door, opp }) => {
-              const nextR = pos.r + dr;
-              const nextC = pos.c + dc;
+              const nextR = pos.r + dr, nextC = pos.c + dc;
               if (nextR >= 0 && nextR < 5 && nextC >= 0 && nextC < 9) {
                 const neighbor = room.grid[nextR][nextC];
                 if (neighbor && neighbor.type === 'vault' && !neighbor.revealed) {
@@ -228,10 +232,21 @@ const handleAITurn = (room, roomCode) => {
       }
     }
 
+    // DISCARD LOGIC: If AI cannot find a valid move (or tools are broken), it MUST discard to refresh its options
     if (!moveMade) {
-      console.log(`AI ${currentPlayer.name} passing (no valid move found or tools broken).`);
+      const cardToDiscard = currentPlayer.hand[Math.floor(Math.random() * currentPlayer.hand.length)];
+      console.log(`AI ${currentPlayer.name} has no valid moves or broken tools. DISCARDING: ${cardToDiscard.label || 'Path Card'}`);
+
+      currentPlayer.hand = currentPlayer.hand.filter(h => h.id !== cardToDiscard.id);
+      if (room.deck.length > 0) currentPlayer.hand.push(room.deck.pop());
+
+      io.to(roomCode).emit('notification', {
+        message: `Agent ${currentPlayer.name} has discarded a card.`,
+        type: 'info'
+      });
     }
 
+    // Advance turn
     room.currentPlayerIndex = (room.currentPlayerIndex + 1) % room.players.length;
     const nextPlayer = room.players[room.currentPlayerIndex];
 
@@ -248,6 +263,7 @@ const handleAITurn = (room, roomCode) => {
       io.to(nextPlayer.id).emit('your_turn', true);
     }
 
+    // Tie-break check
     if (room.deck.length === 0 && room.players.every(p => p.hand.length === 0) && !room.winner) {
       room.winner = 'Cops';
       io.to(roomCode).emit('game_over', { winner: 'Cops' });

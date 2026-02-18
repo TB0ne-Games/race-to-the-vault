@@ -8,7 +8,7 @@ import GameOver from './components/GameOver';
 import Notification from './components/Notification';
 import './App.css';
 
-const socket = io('http://localhost:3001');
+const socket = io('http://192.168.4.176:3001');
 
 function App() {
   const [view, setView] = useState('lobby'); // lobby, host, player, hand

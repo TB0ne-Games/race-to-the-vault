@@ -11,9 +11,9 @@ const HostView = ({ roomCode, players, gameStarted, onStartGame, onAddAI, grid, 
                 </div>
                 {!gameStarted && (
                     <div style={{ display: 'flex', gap: '1rem' }}>
-                        <button className="primary" onClick={onStartGame} disabled={players.length < 3}>
+                        <button className="primary" onClick={() => onStartGame(roomCode)} disabled={players.length < 3}>
                             INITIALIZE HEIST
-                            <span>{players.length}/10 Players</span>
+                            <span>{players.length}/10 Agents</span>
                         </button>
                         <button onClick={() => onAddAI(roomCode)}>
                             INJECT AI AGENT

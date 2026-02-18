@@ -1,0 +1,12 @@
+node_modules/
+dist/
+build/
+*.log
+*_log.txt
+.env
+.DS_Store
+*.webp
+test_simulation.js
+full_system_test.js
+simulation_log.txt
+full_system_test_log.txt

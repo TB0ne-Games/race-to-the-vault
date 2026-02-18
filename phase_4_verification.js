@@ -2,10 +2,11 @@ const { io } = require('socket.io-client');
 
 const log = (msg) => console.log(`[${new Date().toLocaleTimeString()}] ${msg}`);
 
-log('=== STARTING PHASE 4 VERIFICATION (FINAL STABLE) ===');
+log('=== STARTING PHASE 4 VERIFICATION (FINAL STABLE v2) ===');
 
 const hostSocket = io('http://localhost:3001');
-const playerRecords = {};
+const playerRecords = {}; // We'll use name as key for initialization
+const socketToName = {};   // Map socket.id to name after connection
 let roomCode = '';
 let playersReady = 0;
 
@@ -17,54 +18,50 @@ hostSocket.on('room_created', (code) => {
         const name = `Agent_${i}`;
         const socket = io('http://localhost:3001');
 
-        // Populate record immediately so it exists when events arrive
-        playerRecords[socket.id] = { name, socket, hand: [], isTurn: false };
+        playerRecords[name] = { socket, hand: [], isTurn: false };
+
+        socket.on('connect', () => {
+            socketToName[socket.id] = name;
+            log(`${name} connected with ID ${socket.id}`);
+            socket.emit('join_room', { roomCode, playerName: name });
+        });
 
         socket.on('joined_room', () => {
-            log(`${name} joined successfully.`);
-            if (Object.keys(playerRecords).length === 3) {
-                // Check if all players have joined (logic simplified)
-            }
+            log(`${name} joined room.`);
         });
 
         socket.on('game_started', ({ role, hand }) => {
-            const p = playerRecords[socket.id];
-            if (p) {
-                p.hand = hand;
-                log(`${p.name} ready with role ${role}. Hand: ${hand.length} cards.`);
-                playersReady++;
-                if (playersReady === 3) runTests();
-            } else {
-                log(`ERROR: game_started received for unknown socket ${socket.id}`);
+            playerRecords[name].hand = hand;
+            log(`${name} ready with role ${role}. Hand: ${hand.length} cards.`);
+            playersReady++;
+            if (playersReady === 3) {
+                setTimeout(runTests, 1000);
             }
         });
 
         socket.on('your_turn', (myTurn) => {
-            const p = playerRecords[socket.id];
-            if (p) {
-                p.isTurn = myTurn;
-                if (myTurn) log(`Turn: ${p.name}`);
-            }
+            playerRecords[name].isTurn = myTurn;
+            if (myTurn) log(`Turn Event -> ${name}`);
         });
 
         socket.on('hand_update', (hand) => {
-            const p = playerRecords[socket.id];
-            if (p) {
-                p.hand = hand;
-                log(`${p.name} hand updated: ${hand.length} cards.`);
-            }
+            playerRecords[name].hand = hand;
+            log(`${name} hand updated: ${hand.length} cards.`);
         });
 
         socket.on('error', (err) => log(`ERROR (${name}): ${err}`));
-
-        socket.emit('join_room', { roomCode, playerName: name });
     }
 
-    // Trigger start after a short delay to ensure all players joined
-    setTimeout(() => {
-        log('Starting game...');
-        hostSocket.emit('start_game', roomCode);
-    }, 2000);
+    // Check for players periodically and start
+    let startAttempted = false;
+    const checkInterval = setInterval(() => {
+        if (Object.keys(socketToName).length === 3 && !startAttempted) {
+            log('All sockets connected. Starting game...');
+            hostSocket.emit('start_game', roomCode);
+            startAttempted = true;
+            clearInterval(checkInterval);
+        }
+    }, 1000);
 });
 
 hostSocket.on('turn_update', ({ currentPlayer, deckCount }) => {
@@ -75,20 +72,23 @@ function runTests() {
     log('--- STARTING TESTS ---');
     const players = Object.values(playerRecords);
 
-    // TEST 1: Play out of turn
-    const activePlayer = players.find(p => p.isTurn);
-    const nonActivePlayer = players.find(p => !p.isTurn);
+    // Find active and inactive players by checking isTurn flag
+    const activePlayerName = Object.keys(playerRecords).find(name => playerRecords[name].isTurn);
+    const inactivePlayerName = Object.keys(playerRecords).find(name => !playerRecords[name].isTurn);
 
-    if (nonActivePlayer) {
-        log(`Test 1: ${nonActivePlayer.name} playing out of turn...`);
-        nonActivePlayer.socket.emit('place_card', { roomCode, r: 2, c: 1, card: nonActivePlayer.hand[0] });
+    if (inactivePlayerName) {
+        log(`Test 1: ${inactivePlayerName} attempting play out of turn...`);
+        const p = playerRecords[inactivePlayerName];
+        p.socket.emit('place_card', { roomCode, r: 2, c: 1, card: p.hand[0] });
     }
 
-    // TEST 2: Valid play
     setTimeout(() => {
-        if (activePlayer) {
-            log(`Test 2: ${activePlayer.name} playing at (2,1)...`);
-            activePlayer.socket.emit('place_card', { roomCode, r: 2, c: 1, card: activePlayer.hand[0] });
+        if (activePlayerName) {
+            log(`Test 2: ${activePlayerName} (Active) playing at (2,1)...`);
+            const p = playerRecords[activePlayerName];
+            p.socket.emit('place_card', { roomCode, r: 2, c: 1, card: p.hand[0] });
+        } else {
+            log('ERROR: No active player found!');
         }
 
         setTimeout(() => {
@@ -103,4 +103,4 @@ hostSocket.emit('create_room');
 setTimeout(() => {
     log('Timeout reached. Dumping state:');
     process.exit(1);
-}, 20000);
+}, 25000);

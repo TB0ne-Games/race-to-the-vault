@@ -219,11 +219,13 @@ io.on('connection', (socket) => {
           }
         }
 
-        console.log(`Sending role ${player.role} and hand to player ${player.name} (${player.id})`);
-        io.to(player.id).emit('game_started', {
+        console.log(`DEBUG: Player ${player.name} (${player.id}) getting role ${player.role} and hand size ${player.hand.length}`);
+        const startData = {
           role: player.role,
           hand: player.hand
-        });
+        };
+        console.log(`DEBUG: Emitting game_started with:`, JSON.stringify(startData));
+        io.to(player.id).emit('game_started', startData);
       });
 
       // Notify host of the initial board and turn status

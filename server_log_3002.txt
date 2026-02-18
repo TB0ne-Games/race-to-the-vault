@@ -1,0 +1,29 @@
+Server running on port 3002
+User connected: DafReB6VNNnS2hHDAAAB
+Room created: KPD7IC
+User connected: uXh7DyKryvvmewYnAAAD
+Player SoloPlayer joined room KPD7IC
+DEBUG: Player SoloPlayer (uXh7DyKryvvmewYnAAAD) getting role Cop and hand size 6
+DEBUG: Emitting game_started with: {"role":"Cop","hand":[{"id":"card-cqlrpj2ok","top":true,"bottom":true,"left":false,"right":true,"deadEnd":false},{"id":"card-u3o0i0gbv","top":true,"bottom":true,"left":false,"right":false,"deadEnd":true},{"id":"card-9vlth7v65","top":false,"bottom":false,"left":true,"right":true,"deadEnd":false},{"id":"card-ttg4q6br8","top":true,"bottom":true,"left":false,"right":false,"deadEnd":true},{"id":"card-sg5fajmpt","top":false,"bottom":false,"left":true,"right":true,"deadEnd":false},{"id":"card-9zt8xh2jz","top":false,"bottom":false,"left":true,"right":true,"deadEnd":false}]}
+Game started in room KPD7IC. Deck initialized and roles/hands distributed.
+User disconnected: DafReB6VNNnS2hHDAAAB
+User disconnected: uXh7DyKryvvmewYnAAAD
+User connected: UVP-Lc97Mgjh2q0LAAAF
+Room created: 0DHCEC
+User connected: JZuAJOHI2HS9G2CDAAAJ
+User connected: dF6eKzwoaMs6i3BzAAAK
+User connected: mLOcmkNTUmMbp5ZsAAAL
+Player Agent_1 joined room 0DHCEC
+Player Agent_2 joined room 0DHCEC
+Player Agent_3 joined room 0DHCEC
+DEBUG: Player Agent_1 (JZuAJOHI2HS9G2CDAAAJ) getting role Cop and hand size 6
+DEBUG: Emitting game_started with: {"role":"Cop","hand":[{"id":"card-s13ni0ilp","top":false,"bottom":true,"left":false,"right":true,"deadEnd":false},{"id":"card-j37x35qb3","top":false,"bottom":false,"left":true,"right":true,"deadEnd":false},{"id":"card-o1ik4kj4o","top":false,"bottom":false,"left":true,"right":true,"deadEnd":false},{"id":"card-m19aeuzvu","top":true,"bottom":true,"left":true,"right":true,"deadEnd":true},{"id":"card-2xlnksmwi","top":true,"bottom":true,"left":false,"right":false,"deadEnd":true},{"id":"card-jupxbketp","top":true,"bottom":true,"left":true,"right":true,"deadEnd":false}]}
+DEBUG: Player Agent_2 (dF6eKzwoaMs6i3BzAAAK) getting role Robber and hand size 6
+DEBUG: Emitting game_started with: {"role":"Robber","hand":[{"id":"card-gnpquitqj","top":true,"bottom":true,"left":false,"right":false,"deadEnd":false},{"id":"card-igz4l4nzu","top":true,"bottom":true,"left":false,"right":false,"deadEnd":false},{"id":"card-5po1vrcgz","top":false,"bottom":true,"left":true,"right":false,"deadEnd":false},{"id":"card-xm9jvg1xc","top":true,"bottom":true,"left":true,"right":true,"deadEnd":false},{"id":"card-lfz0bi7t9","top":true,"bottom":true,"left":true,"right":false,"deadEnd":false},{"id":"card-ynmfi88v6","top":true,"bottom":true,"left":false,"right":true,"deadEnd":false}]}
+DEBUG: Player Agent_3 (mLOcmkNTUmMbp5ZsAAAL) getting role Robber and hand size 6
+DEBUG: Emitting game_started with: {"role":"Robber","hand":[{"id":"card-d5e20nejz","top":true,"bottom":true,"left":true,"right":false,"deadEnd":false},{"id":"card-ad6b0rtx6","top":true,"bottom":true,"left":true,"right":true,"deadEnd":false},{"id":"card-1j5uwb7kd","top":true,"bottom":true,"left":true,"right":true,"deadEnd":true},{"id":"card-91evseung","top":true,"bottom":true,"left":false,"right":true,"deadEnd":false},{"id":"card-0rrpaqynb","top":false,"bottom":true,"left":true,"right":false,"deadEnd":false},{"id":"card-fyuz9rb6a","top":false,"bottom":false,"left":true,"right":true,"deadEnd":true}]}
+Game started in room 0DHCEC. Deck initialized and roles/hands distributed.
+User disconnected: UVP-Lc97Mgjh2q0LAAAF
+User disconnected: mLOcmkNTUmMbp5ZsAAAL
+User disconnected: dF6eKzwoaMs6i3BzAAAK
+User disconnected: JZuAJOHI2HS9G2CDAAAJ

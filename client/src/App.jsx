@@ -18,6 +18,7 @@ function App() {
   const [hand, setHand] = useState([]);
   const [isMyTurn, setIsMyTurn] = useState(false);
   const [turnInfo, setTurnInfo] = useState(null);
+  const [roomPlayers, setRoomPlayers] = useState([]); // New state
 
   useEffect(() => {
     socket.on('room_created', (code) => {
@@ -55,10 +56,15 @@ function App() {
 
     socket.on('turn_update', (info) => {
       setTurnInfo(info);
+      if (info.players) setRoomPlayers(info.players);
     });
 
     socket.on('game_over', ({ winner }) => {
       alert(`Game Over! ${winner} Win!`);
+    });
+
+    socket.on('intel_reveal', ({ r, c, hasMoney }) => {
+      alert(`INTEL: Vault at (${r},${c}) ${hasMoney ? "CONTAINS THE MONEY! 💰" : "is EMPTY. ❌"}`);
     });
 
     socket.on('error', (message) => {
@@ -151,8 +157,12 @@ function App() {
               <HandView
                 hand={hand}
                 isMyTurn={isMyTurn}
+                players={roomPlayers}
                 onPlaceCard={(r, c, card) => {
                   socket.emit('place_card', { roomCode, r, c, card });
+                }}
+                onPlayAction={(actionCard, targetId, r, c) => {
+                  socket.emit('play_action', { roomCode, actionCard, targetId, r, c });
                 }}
               />
             </div>

@@ -135,10 +135,24 @@ const CREATE_DECK = () => {
   addCards(5, { top: false, bottom: true, left: false, right: true, deadEnd: false }); // Curve BR
   addCards(5, { top: false, bottom: true, left: true, right: false, deadEnd: false }); // Curve BL
 
-  // Dead-end Cards (Sabotage)
+  // Dead-end Cards (Sabotage path)
   addCards(3, { top: true, bottom: true, left: true, right: true, deadEnd: true }); // Blocked Cross
   addCards(3, { top: false, bottom: false, left: true, right: true, deadEnd: true }); // Blocked Horizontal
   addCards(3, { top: true, bottom: true, left: false, right: false, deadEnd: true }); // Blocked Vertical
+
+  // Action Cards
+  addCards(3, { type: 'action', action: 'map', label: 'Vault Intel' });
+  addCards(3, { type: 'action', action: 'dynamite', label: 'Dynamite' });
+
+  // Sabotage Tools (Break others)
+  addCards(3, { type: 'action', action: 'sabotage', tool: 'flashlight', label: 'Cut Power' });
+  addCards(3, { type: 'action', action: 'sabotage', tool: 'drill', label: 'Jam Drill' });
+  addCards(3, { type: 'action', action: 'sabotage', tool: 'map', label: 'Steal Map' });
+
+  // Repair Tools (Fix oneself or others)
+  addCards(2, { type: 'action', action: 'repair', tool: 'flashlight', label: 'Flashlight' });
+  addCards(2, { type: 'action', action: 'repair', tool: 'drill', label: 'New Drill Bit' });
+  addCards(2, { type: 'action', action: 'repair', tool: 'map', label: 'Crumpled Map' });
 
   return deck;
 };
@@ -163,7 +177,13 @@ io.on('connection', (socket) => {
 
   socket.on('join_room', ({ roomCode, playerName }) => {
     if (rooms[roomCode]) {
-      const player = { id: socket.id, name: playerName, role: null, hand: [] };
+      const player = {
+        id: socket.id,
+        name: playerName,
+        role: null,
+        hand: [],
+        tools: { flashlight: true, drill: true, map: true }
+      };
       rooms[roomCode].players.push(player);
       socket.join(roomCode);
       socket.emit('joined_room', { roomCode, playerName });
@@ -254,6 +274,12 @@ io.on('connection', (socket) => {
         return socket.emit('error', 'Not your turn!');
       }
 
+      // Tool validation: Can't place path if any tool is broken
+      const brokenTools = Object.keys(currentPlayer.tools).filter(t => !currentPlayer.tools[t]);
+      if (brokenTools.length > 0) {
+        return socket.emit('error', `Cannot place paths! Tool broken: ${brokenTools.join(', ')}`);
+      }
+
       if (CAN_PLACE_CARD(room.grid, r, c, card)) {
         room.grid[r][c] = { ...card, type: 'path' };
 
@@ -303,13 +329,86 @@ io.on('connection', (socket) => {
         io.to(room.host).emit('board_update', room.grid);
         io.to(room.host).emit('turn_update', {
           currentPlayer: nextPlayer.name,
-          deckCount: room.deck.length
+          deckCount: room.deck.length,
+          players: room.players.map(p => ({ id: p.id, name: p.name, tools: p.tools }))
         });
 
         // Notify next player
         io.to(nextPlayer.id).emit('your_turn', true);
+
+        // Check for Cop victory (Deck empty and all hands empty)
+        if (room.deck.length === 0 && room.players.every(p => p.hand.length === 0) && !room.winner) {
+          room.winner = 'Cops';
+          io.to(roomCode).emit('game_over', { winner: 'Cops' });
+        }
       } else {
         socket.emit('error', 'Invalid placement');
+      }
+    }
+  });
+
+  socket.on('play_action', ({ roomCode, actionCard, targetId, r, c }) => {
+    if (rooms[roomCode] && rooms[roomCode].gameStarted) {
+      const room = rooms[roomCode];
+      const currentPlayer = room.players[room.currentPlayerIndex];
+
+      if (socket.id !== currentPlayer.id) return socket.emit('error', 'Not your turn!');
+
+      let actionSuccess = false;
+
+      if (actionCard.action === 'map') {
+        const vault = room.grid[r][c];
+        if (vault && vault.type === 'vault') {
+          socket.emit('intel_reveal', { r, c, hasMoney: vault.hasMoney });
+          actionSuccess = true;
+        }
+      } else if (actionCard.action === 'dynamite') {
+        const tile = room.grid[r][c];
+        if (tile && tile.type === 'path') {
+          room.grid[r][c] = null;
+          actionSuccess = true;
+        }
+      } else if (actionCard.action === 'sabotage') {
+        const target = room.players.find(p => p.id === targetId);
+        if (target && target.tools[actionCard.tool]) {
+          target.tools[actionCard.tool] = false;
+          actionSuccess = true;
+        }
+      } else if (actionCard.action === 'repair') {
+        const target = room.players.find(p => p.id === targetId);
+        if (target && !target.tools[actionCard.tool]) {
+          target.tools[actionCard.tool] = true;
+          actionSuccess = true;
+        }
+      }
+
+      if (actionSuccess) {
+        // Remove card from hand
+        currentPlayer.hand = currentPlayer.hand.filter(h => h.id !== actionCard.id);
+        if (room.deck.length > 0) currentPlayer.hand.push(room.deck.pop());
+
+        // Notify and advance
+        socket.emit('hand_update', currentPlayer.hand);
+        socket.emit('your_turn', false);
+
+        room.currentPlayerIndex = (room.currentPlayerIndex + 1) % room.players.length;
+        const nextPlayer = room.players[room.currentPlayerIndex];
+
+        io.to(room.host).emit('board_update', room.grid);
+        io.to(room.host).emit('turn_update', {
+          currentPlayer: nextPlayer.name,
+          deckCount: room.deck.length,
+          players: room.players.map(p => ({ id: p.id, name: p.name, tools: p.tools }))
+        });
+        io.to(nextPlayer.id).emit('your_turn', true);
+
+        // Check for Cop victory (Deck empty and all hands empty)
+        if (room.deck.length === 0 && room.players.every(p => p.hand.length === 0) && !room.winner) {
+          room.winner = 'Cops';
+          io.to(roomCode).emit('game_over', { winner: 'Cops' });
+        }
+      } else {
+        socket.emit('error', 'Action failed or invalid target');
       }
     }
   });

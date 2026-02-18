@@ -1,0 +1,19 @@
+Server running on port 3001
+User connected: Bjbb3YfJEzKaZeVcAAAE
+User connected: Em60CQq_Zs3UJgu7AAAF
+User connected: 4NOSY1WcciAue6KOAAAG
+User connected: SA8zZbCJCuavKPA_AAAH
+User connected: ZDkyjjZpuvtQ84Y7AAAJ
+Room created: Z7ARZA
+User connected: qBTxfAl8O9rnIj_yAAAM
+User connected: 0nvblnKPQeIBPOVkAAAN
+Player Agent_2 joined room Z7ARZA
+Player Agent_1 joined room Z7ARZA
+DEBUG: Player Agent_2 (0nvblnKPQeIBPOVkAAAN) getting role Cop and hand size 6
+DEBUG: Emitting game_started with: {"role":"Cop","hand":[{"id":"card-quir60c3m","type":"action","action":"repair","tool":"flashlight","label":"Flashlight"},{"id":"card-nfab3km6j","top":true,"bottom":true,"left":false,"right":false,"deadEnd":false},{"id":"card-d3jhzn20b","top":false,"bottom":true,"left":false,"right":true,"deadEnd":false},{"id":"card-aezhoml6h","top":false,"bottom":false,"left":true,"right":true,"deadEnd":false},{"id":"card-2qfg96dfx","top":true,"bottom":true,"left":false,"right":false,"deadEnd":true},{"id":"card-0wj2l7un7","top":true,"bottom":true,"left":false,"right":true,"deadEnd":false}]}
+DEBUG: Player Agent_1 (qBTxfAl8O9rnIj_yAAAM) getting role Robber and hand size 6
+DEBUG: Emitting game_started with: {"role":"Robber","hand":[{"id":"card-5ctalimfh","top":true,"bottom":true,"left":true,"right":true,"deadEnd":false},{"id":"card-u9ibc28x0","top":false,"bottom":false,"left":true,"right":true,"deadEnd":false},{"id":"card-g0b8m231m","top":false,"bottom":false,"left":true,"right":true,"deadEnd":false},{"id":"card-sxh6etkor","type":"action","action":"map","label":"Vault Intel"},{"id":"card-ay3mzk8uy","type":"action","action":"sabotage","tool":"drill","label":"Jam Drill"},{"id":"card-nb7vilf3j","type":"action","action":"repair","tool":"map","label":"Crumpled Map"}]}
+Game started in room Z7ARZA. Deck initialized and roles/hands distributed.
+User disconnected: ZDkyjjZpuvtQ84Y7AAAJ
+User disconnected: 0nvblnKPQeIBPOVkAAAN
+User disconnected: qBTxfAl8O9rnIj_yAAAM

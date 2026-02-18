@@ -92,8 +92,17 @@ const HostView = ({ roomCode, players, onStart, board, turnInfo }) => {
             <div className="game-footer">
                 <div className="active-players">
                     {players.map(p => (
-                        <div key={p.id} className={`small-player-card ${turnInfo?.currentPlayer === p.name ? 'active' : ''}`}>
-                            {p.name}
+                        <div className={`small-player-card ${turnInfo?.currentPlayer === p.name ? 'active' : ''}`} key={p.id}>
+                            <div className="player-meta">
+                                <span className="player-name">{p.name}</span>
+                                {p.tools && (
+                                    <div className="player-tools">
+                                        <span title="Flashlight" className={p.tools.flashlight ? 'tool-ok' : 'tool-broken'}>🔦</span>
+                                        <span title="Drill" className={p.tools.drill ? 'tool-ok' : 'tool-broken'}>⚙️</span>
+                                        <span title="Map" className={p.tools.map ? 'tool-ok' : 'tool-broken'}>🗺️</span>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     ))}
                 </div>

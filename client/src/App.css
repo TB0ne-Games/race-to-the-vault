@@ -667,3 +667,92 @@ input:focus {
   color: var(--danger);
   font-weight: bold;
 }
+
+/* Phase 5 Action Card Styles */
+.card-action {
+  background: #2a3a2a !important;
+  border-color: #4a6a4a !important;
+}
+
+.card-action.selected {
+  border-color: #2ecc71 !important;
+  box-shadow: 0 0 15px rgba(46, 204, 113, 0.3) !important;
+}
+
+.action-preview {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+}
+
+.action-icon {
+  font-size: 2.5rem;
+}
+
+.card-label {
+  font-size: 0.7rem;
+  font-weight: bold;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  text-align: center;
+}
+
+.targeting-options {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+select {
+  width: 100%;
+  padding: 10px;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  color: white;
+  border-radius: 8px;
+}
+
+/* Tool Status Styles in HostView */
+.player-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+}
+
+.player-tools {
+  display: flex;
+  gap: 8px;
+  font-size: 1.2rem;
+}
+
+.tool-broken {
+  opacity: 0.3;
+  filter: grayscale(1);
+  position: relative;
+}
+
+.tool-broken::after {
+  content: '×';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--danger);
+  font-weight: bold;
+  font-size: 1.5rem;
+}
+
+.tool-ok {
+  opacity: 1;
+}
+
+.player-name {
+  font-weight: bold;
+}

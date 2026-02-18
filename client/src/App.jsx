@@ -150,9 +150,10 @@ function App() {
         <HostView
           roomCode={roomCode}
           players={players}
-          onStart={handleStartGame}
-          board={board}
+          onStartGame={handleStartGame}
+          grid={board}
           turnInfo={turnInfo}
+          gameStarted={!!board}
         />
       )}
 

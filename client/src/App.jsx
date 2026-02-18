@@ -3,6 +3,7 @@ import io from 'socket.io-client';
 import HostView from './components/HostView';
 import PlayerView from './components/PlayerView';
 import RevealRole from './components/RevealRole';
+import HandView from './components/HandView';
 import './App.css';
 
 const socket = io('http://localhost:3001');
@@ -14,6 +15,9 @@ function App() {
   const [name, setName] = useState('');
   const [role, setRole] = useState(null);
   const [board, setBoard] = useState(null);
+  const [hand, setHand] = useState([]);
+  const [isMyTurn, setIsMyTurn] = useState(false);
+  const [turnInfo, setTurnInfo] = useState(null);
 
   useEffect(() => {
     socket.on('room_created', (code) => {
@@ -35,9 +39,26 @@ function App() {
       setBoard(updatedBoard);
     });
 
-    socket.on('game_started', ({ role }) => {
+    socket.on('game_started', ({ role, hand }) => {
       setRole(role);
+      setHand(hand || []);
       setView('hand');
+    });
+
+    socket.on('hand_update', (updatedHand) => {
+      setHand(updatedHand);
+    });
+
+    socket.on('your_turn', (myTurn) => {
+      setIsMyTurn(myTurn);
+    });
+
+    socket.on('turn_update', (info) => {
+      setTurnInfo(info);
+    });
+
+    socket.on('game_over', ({ winner }) => {
+      alert(`Game Over! ${winner} Win!`);
     });
 
     socket.on('error', (message) => {
@@ -105,6 +126,7 @@ function App() {
           players={players}
           onStart={handleStartGame}
           board={board}
+          turnInfo={turnInfo}
         />
       )}
 
@@ -113,7 +135,7 @@ function App() {
       )}
 
       {view === 'hand' && (
-        <div className="player-hand">
+        <div className="player-hand-container">
           {!role ? (
             <div className="player-hand-placeholder">
               <h2>Welcome, Agent {name}</h2>
@@ -124,7 +146,16 @@ function App() {
               </div>
             </div>
           ) : (
-            <RevealRole role={role} name={name} />
+            <div className="game-active-view">
+              <RevealRole role={role} name={name} />
+              <HandView
+                hand={hand}
+                isMyTurn={isMyTurn}
+                onPlaceCard={(r, c, card) => {
+                  socket.emit('place_card', { roomCode, r, c, card });
+                }}
+              />
+            </div>
           )}
         </div>
       )}

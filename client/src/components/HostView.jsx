@@ -1,6 +1,6 @@
 import React from 'react';
 
-const HostView = ({ roomCode, players, onStart, board }) => {
+const HostView = ({ roomCode, players, onStart, board, turnInfo }) => {
     if (!board) {
         return (
             <div className="host-container">
@@ -44,8 +44,22 @@ const HostView = ({ roomCode, players, onStart, board }) => {
     return (
         <div className="game-host-container">
             <div className="game-header">
-                <h1>Vault Heist</h1>
-                <div className="game-status">In Progress</div>
+                <div>
+                    <h1>Vault Heist</h1>
+                    {turnInfo && (
+                        <div className="turn-banner">
+                            Current Turn: <span className="active-player">{turnInfo.currentPlayer}</span>
+                        </div>
+                    )}
+                </div>
+                <div className="right-stats">
+                    <div className="game-status">{turnInfo ? 'Heist Active' : 'Waiting'}</div>
+                    {turnInfo && (
+                        <div className="deck-count">
+                            Deck: <strong>{turnInfo.deckCount}</strong> cards
+                        </div>
+                    )}
+                </div>
             </div>
 
             <div className="board-grid">
@@ -78,7 +92,7 @@ const HostView = ({ roomCode, players, onStart, board }) => {
             <div className="game-footer">
                 <div className="active-players">
                     {players.map(p => (
-                        <div key={p.id} className="small-player-card">
+                        <div key={p.id} className={`small-player-card ${turnInfo?.currentPlayer === p.name ? 'active' : ''}`}>
                             {p.name}
                         </div>
                     ))}

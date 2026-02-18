@@ -5,7 +5,6 @@ const cors = require('cors');
 
 const app = express();
 app.use(cors());
-
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
@@ -119,6 +118,38 @@ const CAN_PLACE_CARD = (board, r, c, card) => {
   return connected;
 };
 
+const CREATE_DECK = () => {
+  const deck = [];
+  const addCards = (count, props) => {
+    for (let i = 0; i < count; i++) {
+      deck.push({ id: `card-${Math.random().toString(36).substr(2, 9)}`, ...props });
+    }
+  };
+
+  // Good Path Cards (Connective)
+  addCards(5, { top: true, bottom: true, left: true, right: true, deadEnd: false }); // Cross
+  addCards(5, { top: true, bottom: true, left: true, right: false, deadEnd: false }); // T-left
+  addCards(5, { top: true, bottom: true, left: false, right: true, deadEnd: false }); // T-right
+  addCards(10, { top: false, bottom: false, left: true, right: true, deadEnd: false }); // Horizontal
+  addCards(10, { top: true, bottom: true, left: false, right: false, deadEnd: false }); // Vertical
+  addCards(5, { top: false, bottom: true, left: false, right: true, deadEnd: false }); // Curve BR
+  addCards(5, { top: false, bottom: true, left: true, right: false, deadEnd: false }); // Curve BL
+
+  // Dead-end Cards (Sabotage)
+  addCards(3, { top: true, bottom: true, left: true, right: true, deadEnd: true }); // Blocked Cross
+  addCards(3, { top: false, bottom: false, left: true, right: true, deadEnd: true }); // Blocked Horizontal
+  addCards(3, { top: true, bottom: true, left: false, right: false, deadEnd: true }); // Blocked Vertical
+
+  return deck;
+};
+
+const SHUFFLE_DECK = (deck) => {
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+};
+
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
@@ -132,7 +163,7 @@ io.on('connection', (socket) => {
 
   socket.on('join_room', ({ roomCode, playerName }) => {
     if (rooms[roomCode]) {
-      const player = { id: socket.id, name: playerName, role: null };
+      const player = { id: socket.id, name: playerName, role: null, hand: [] };
       rooms[roomCode].players.push(player);
       socket.join(roomCode);
       socket.emit('joined_room', { roomCode, playerName });
@@ -153,7 +184,14 @@ io.on('connection', (socket) => {
       // Initialize board and shuffle vaults
       room.grid = INITIAL_BOARD(5, 9);
       SHUFFLE_VAULTS(room.grid);
+
+      // Initialize deck
+      room.deck = CREATE_DECK();
+      SHUFFLE_DECK(room.deck);
+
       room.gameStarted = true;
+      room.currentPlayerIndex = 0;
+      room.winner = null;
 
       // Saboteur-like role distribution
       let copCount = 1;
@@ -165,19 +203,40 @@ io.on('connection', (socket) => {
       for (let i = 0; i < playerCount - copCount; i++) roles.push('Robber');
 
       // Shuffle roles
-      roles = roles.sort(() => Math.random() - 0.5);
+      for (let i = roles.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [roles[i], roles[j]] = [roles[j], roles[i]];
+      }
 
-      // Assign and notify players
-      room.players.forEach((player, index) => {
-        player.role = roles[index];
-        console.log(`Sending role ${player.role} to player ${player.name} (${player.id})`);
-        io.to(player.id).emit('game_started', { role: player.role });
+      const handSize = playerCount <= 5 ? 6 : 5;
+
+      room.players.forEach((player, idx) => {
+        player.role = roles[idx];
+        player.hand = [];
+        for (let i = 0; i < handSize; i++) {
+          if (room.deck.length > 0) {
+            player.hand.push(room.deck.pop());
+          }
+        }
+
+        console.log(`Sending role ${player.role} and hand to player ${player.name} (${player.id})`);
+        io.to(player.id).emit('game_started', {
+          role: player.role,
+          hand: player.hand
+        });
       });
 
-      // Notify host of the initial board
+      // Notify host of the initial board and turn status
       io.to(room.host).emit('board_update', room.grid);
+      io.to(room.host).emit('turn_update', {
+        currentPlayer: room.players[room.currentPlayerIndex].name,
+        deckCount: room.deck.length
+      });
 
-      console.log(`Game started in room ${roomCode}. Board initialized and roles distributed.`);
+      // Also notify the active player
+      io.to(room.players[room.currentPlayerIndex].id).emit('your_turn', true);
+
+      console.log(`Game started in room ${roomCode}. Deck initialized and roles/hands distributed.`);
     } else {
       console.log(`Start game failed: room ${roomCode} not found or not host`);
     }
@@ -186,9 +245,27 @@ io.on('connection', (socket) => {
   socket.on('place_card', ({ roomCode, r, c, card }) => {
     if (rooms[roomCode] && rooms[roomCode].gameStarted) {
       const room = rooms[roomCode];
+      const currentPlayer = room.players[room.currentPlayerIndex];
+
+      // Turn validation
+      if (socket.id !== currentPlayer.id) {
+        return socket.emit('error', 'Not your turn!');
+      }
 
       if (CAN_PLACE_CARD(room.grid, r, c, card)) {
         room.grid[r][c] = { ...card, type: 'path' };
+
+        // Remove card from player's hand
+        currentPlayer.hand = currentPlayer.hand.filter(h => h.id !== card.id);
+
+        // Draw a new card
+        if (room.deck.length > 0) {
+          currentPlayer.hand.push(room.deck.pop());
+        }
+
+        // Notify client of hand/turn update
+        socket.emit('hand_update', currentPlayer.hand);
+        socket.emit('your_turn', false);
 
         // Check for vault reveals
         const directions = [
@@ -216,7 +293,19 @@ io.on('connection', (socket) => {
           }
         });
 
+        // Advance turn
+        room.currentPlayerIndex = (room.currentPlayerIndex + 1) % room.players.length;
+        const nextPlayer = room.players[room.currentPlayerIndex];
+
+        // Notify host
         io.to(room.host).emit('board_update', room.grid);
+        io.to(room.host).emit('turn_update', {
+          currentPlayer: nextPlayer.name,
+          deckCount: room.deck.length
+        });
+
+        // Notify next player
+        io.to(nextPlayer.id).emit('your_turn', true);
       } else {
         socket.emit('error', 'Invalid placement');
       }
@@ -225,7 +314,6 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
-    // Handle cleanup if needed
   });
 });
 

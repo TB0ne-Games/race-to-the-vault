@@ -1,7 +1,7 @@
 import React from 'react';
 import TileRenderer from './TileRenderer';
 
-const HostView = ({ roomCode, players, gameStarted, onStartGame, grid, turnInfo }) => {
+const HostView = ({ roomCode, players, gameStarted, onStartGame, onAddAI, grid, turnInfo }) => {
     return (
         <div className="host-container">
             <div className="host-header">

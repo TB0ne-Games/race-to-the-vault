@@ -234,6 +234,7 @@ function App() {
                 hand={hand}
                 isMyTurn={isMyTurn}
                 players={roomPlayers}
+                board={board}
                 onPlaceCard={(r, c, card) => {
                   socket.emit('place_card', { roomCode, r, c, card });
                 }}

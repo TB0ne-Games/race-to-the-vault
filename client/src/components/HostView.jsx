@@ -101,15 +101,7 @@ const HostView = ({ roomCode, players, gameStarted, onStartGame, onAddAI, onRemo
                     )}
                 </div>
             ) : (
-                <div className="board-grid">
-                    {grid && grid.map((row, r) => (
-                        row.map((tile, c) => (
-                            <div key={`${r}-${c}`} className="grid-cell">
-                                <TileRenderer tile={tile} />
-                            </div>
-                        ))
-                    ))}
-                </div>
+                <Board grid={grid} />
             )}
 
             {gameStarted && (

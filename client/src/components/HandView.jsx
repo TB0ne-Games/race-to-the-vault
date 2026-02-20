@@ -1,30 +1,37 @@
-import React, { useState } from 'react';
-import TileRenderer from './TileRenderer';
+import Board from './Board';
 
-const HandView = ({ hand, isMyTurn, players, onPlaceCard, onPlayAction }) => {
+const HandView = ({ hand, board, isMyTurn, players, onPlaceCard, onPlayAction }) => {
     const [selectedCardId, setSelectedCardId] = useState(null);
-    const [targetR, setTargetR] = useState(2);
-    const [targetC, setTargetC] = useState(1);
     const [targetPlayerId, setTargetPlayerId] = useState(players[0]?.id || '');
 
     const selectedCard = hand.find(c => c.id === selectedCardId);
 
-    const handleConfirm = () => {
+    const handleCellClick = (r, c) => {
         if (!selectedCard || !isMyTurn) return;
 
         if (selectedCard.type === 'action') {
-            onPlayAction(selectedCard, targetPlayerId, parseInt(targetR), parseInt(targetC));
+            // Some actions might require a target player, but dynamite/map can use coordinates
+            if (selectedCard.action === 'map' || selectedCard.action === 'dynamite') {
+                onPlayAction(selectedCard, null, r, c);
+                setSelectedCardId(null);
+            } else if (selectedCard.action === 'sabotage' || selectedCard.action === 'repair') {
+                // If it's a social action, we might still want to select a player
+                // But if they clicked the board, we could potentially auto-select a player if there's one there
+                // For now, let's keep it simple for placement
+                onPlayAction(selectedCard, targetPlayerId, r, c);
+                setSelectedCardId(null);
+            }
         } else {
-            onPlaceCard(parseInt(targetR), parseInt(targetC), selectedCard);
+            onPlaceCard(r, c, selectedCard);
+            setSelectedCardId(null);
         }
-        setSelectedCardId(null);
     };
 
     const getActionIcon = (action) => {
         switch (action) {
             case 'map': return '🗺️';
             case 'dynamite': return '🧨';
-            case 'sabotage': return '🔧'; // Sabotage tool
+            case 'sabotage': return '🔧';
             case 'repair': return '🛠️';
             default: return '🃏';
         }
@@ -35,6 +42,13 @@ const HandView = ({ hand, isMyTurn, players, onPlaceCard, onPlayAction }) => {
             <div className="turn-indicator">
                 {isMyTurn ? "🚨 YOUR MOVE, AGENT" : "🛰️ WAITING FOR INTEL..."}
             </div>
+
+            {board && isMyTurn && selectedCardId && (
+                <div className="board-interaction-layer">
+                    <p className="interaction-hint">SELECT A LOCATION ON THE GRID TO DEPLOY</p>
+                    <Board grid={board} onCellClick={handleCellClick} />
+                </div>
+            )}
 
             <div className="hand-scroll">
                 {hand.map((card) => (
@@ -61,19 +75,6 @@ const HandView = ({ hand, isMyTurn, players, onPlaceCard, onPlayAction }) => {
                     <h3>{selectedCard.type === 'action' ? `INITIATE: ${selectedCard.label}` : 'CONSTRUCT PATH'}</h3>
 
                     <div className="targeting-options">
-                        {(selectedCard.type !== 'action' || selectedCard.action === 'map' || selectedCard.action === 'dynamite') && (
-                            <div className="input-row">
-                                <div className="control-group">
-                                    <label>LATITUDE (ROW)</label>
-                                    <input type="number" value={targetR} min="0" max="4" onChange={(e) => setTargetR(e.target.value)} />
-                                </div>
-                                <div className="control-group">
-                                    <label>LONGITUDE (COL)</label>
-                                    <input type="number" value={targetC} min="0" max="8" onChange={(e) => setTargetC(e.target.value)} />
-                                </div>
-                            </div>
-                        )}
-
                         {(selectedCard.action === 'sabotage' || selectedCard.action === 'repair') && (
                             <div className="control-group">
                                 <label>TARGET AGENT</label>
@@ -85,11 +86,9 @@ const HandView = ({ hand, isMyTurn, players, onPlaceCard, onPlayAction }) => {
                                 </select>
                             </div>
                         )}
+                        <p className="hint">Click on the board above to confirm location.</p>
                     </div>
 
-                    <button className="primary" onClick={handleConfirm}>
-                        CONFIRM {selectedCard.type === 'action' ? 'EXECUTION' : 'DEPLOYMENT'}
-                    </button>
                     <button onClick={() => setSelectedCardId(null)} style={{ marginTop: '10px', fontSize: '0.8rem', padding: '0.5rem' }}>
                         ABORT
                     </button>

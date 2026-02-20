@@ -1,14 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import TileRenderer from './TileRenderer';
+import HandView from './HandView';
+import RevealRole from './RevealRole';
 
-const HostView = ({ roomCode, players, gameStarted, onStartGame, onAddAI, onRemoveAI, grid, turnInfo, aiDifficulty, setAiDifficulty }) => {
+const HostView = ({ roomCode, players, gameStarted, onStartGame, onAddAI, onRemoveAI, grid, turnInfo, aiDifficulty, setAiDifficulty, role, hand, isMyTurn, onPlaceCard, onPlayAction, roomPlayers, onJoinAsPlayer }) => {
+    const [isJoining, setIsJoining] = useState(false);
+    const [hostName, setHostName] = useState('Host Agent');
     const getDifficultyLabel = (val) => {
         if (val <= 3) return "EASY";
         if (val <= 7) return "MEDIUM";
         return "HARD";
     };
     return (
-        <div className="host-container">
+        <div className={`host-container ${role ? 'playing' : ''}`}>
             <div className="host-header">
                 <div className="room-badge">
                     <span className="label">Room Code</span>
@@ -77,6 +81,24 @@ const HostView = ({ roomCode, players, gameStarted, onStartGame, onAddAI, onRemo
                         ))}
                     </div>
                     {players.length < 3 && <p className="hint" style={{ textAlign: 'center', marginTop: '2rem', opacity: 0.6 }}>MINIMUM 3 AGENTS REQUIRED TO START</p>}
+
+                    {!players.find(p => p.id.startsWith('ai-') === false && p.name === hostName) && !isJoining && (
+                        <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+                            <button className="secondary" onClick={() => setIsJoining(true)}>JOIN AS AGENT</button>
+                        </div>
+                    )}
+
+                    {isJoining && (
+                        <div className="join-form" style={{ marginTop: '2rem', maxWidth: '300px', margin: '2rem auto' }}>
+                            <input
+                                className="form-input"
+                                value={hostName}
+                                onChange={(e) => setHostName(e.target.value)}
+                                placeholder="HOST AGENT NAME"
+                            />
+                            <button className="primary" onClick={() => { onJoinAsPlayer(hostName); setIsJoining(false); }}>CONFIRM ENTRY</button>
+                        </div>
+                    )}
                 </div>
             ) : (
                 <div className="board-grid">
@@ -108,6 +130,29 @@ const HostView = ({ roomCode, players, gameStarted, onStartGame, onAddAI, onRemo
                             </div>
                         ))}
                     </div>
+                </div>
+            )}
+
+            {gameStarted && role && (
+                <div className="host-player-controls" style={{
+                    position: 'fixed',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    zIndex: 1000,
+                    background: 'var(--glass-bg)',
+                    backdropFilter: 'blur(10px)',
+                    borderTop: '1px solid var(--glass-border)',
+                    padding: '10px'
+                }}>
+                    <RevealRole role={role} onComplete={() => { }} />
+                    <HandView
+                        hand={hand}
+                        isMyTurn={isMyTurn}
+                        players={roomPlayers}
+                        onPlaceCard={onPlaceCard}
+                        onPlayAction={onPlayAction}
+                    />
                 </div>
             )}
         </div>

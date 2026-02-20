@@ -127,6 +127,13 @@ button:disabled {
   flex-direction: column;
   gap: 2rem;
   animation: panelFadeIn 0.6s ease-out;
+  padding-bottom: 120px;
+  /* Room for header/footer */
+}
+
+.host-container.playing {
+  padding-bottom: 300px;
+  /* Extra room for docked HandView */
 }
 
 .host-header {

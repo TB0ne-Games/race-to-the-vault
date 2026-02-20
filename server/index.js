@@ -126,19 +126,22 @@ const CREATE_DECK = () => {
     }
   };
 
-  // Good Path Cards (Connective)
-  addCards(5, { top: true, bottom: true, left: true, right: true, deadEnd: false }); // Cross
-  addCards(5, { top: true, bottom: true, left: true, right: false, deadEnd: false }); // T-left
-  addCards(5, { top: true, bottom: true, left: false, right: true, deadEnd: false }); // T-right
-  addCards(10, { top: false, bottom: false, left: true, right: true, deadEnd: false }); // Horizontal
-  addCards(10, { top: true, bottom: true, left: false, right: false, deadEnd: false }); // Vertical
-  addCards(5, { top: false, bottom: true, left: false, right: true, deadEnd: false }); // Curve BR
-  addCards(5, { top: false, bottom: true, left: true, right: false, deadEnd: false }); // Curve BL
+  // --- CONNECTIVE PATHS (25 Total) ---
+  addCards(3, { top: false, bottom: false, left: true, right: true, deadEnd: false, label: 'Horizontal Strip' });
+  addCards(1, { top: true, bottom: true, left: false, right: false, deadEnd: false, label: 'Vertical Strip' });
+  addCards(10, { top: true, bottom: true, left: true, right: true, deadEnd: false, label: 'Four-Way Junction' });
+  addCards(1, { top: true, bottom: false, left: true, right: false, deadEnd: false, label: 'Top-Left Corner' });
+  addCards(5, { top: true, bottom: true, left: false, right: true, deadEnd: false, label: 'Top-Bottom-Right T' });
+  addCards(5, { top: true, bottom: false, left: true, right: true, deadEnd: false, label: 'Top-Left-Right T' });
 
-  // Dead-end Cards (Sabotage path)
-  addCards(3, { top: true, bottom: true, left: true, right: true, deadEnd: true }); // Blocked Cross
-  addCards(3, { top: false, bottom: false, left: true, right: true, deadEnd: true }); // Blocked Horizontal
-  addCards(3, { top: true, bottom: true, left: false, right: false, deadEnd: true }); // Blocked Vertical
+  // --- DEAD-END CARDS (19 Total) ---
+  addCards(1, { top: false, bottom: false, left: true, right: true, deadEnd: true, label: 'Horizontal Block' });
+  addCards(1, { top: true, bottom: true, left: false, right: true, deadEnd: true, label: 'Top-Right-Bottom Block' });
+  addCards(1, { top: true, bottom: true, left: true, right: false, deadEnd: true, label: 'Top-Left Vertical Block' });
+  addCards(1, { top: true, bottom: false, left: false, right: true, deadEnd: true, label: 'Top-Right Block' });
+  addCards(1, { top: true, bottom: false, left: false, right: false, deadEnd: true, label: 'Top Block' });
+  addCards(7, { top: true, bottom: false, left: false, right: true, deadEnd: true, label: 'Top-Right Rock' });
+  addCards(7, { top: true, bottom: false, left: true, right: false, deadEnd: true, label: 'Top-Left Rock' });
 
   // Action Cards
   addCards(3, { type: 'action', action: 'map', label: 'Vault Intel' });

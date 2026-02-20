@@ -1,0 +1,175 @@
+/* Board Remodel Styles */
+:root {
+    --neon-blue: #00f2ff;
+    --neon-purple: #bc13fe;
+    --neon-pink: #ff00de;
+    --neon-green: #39ff14;
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+.board-grid {
+    display: grid;
+    grid-template-columns: repeat(9, 80px);
+    /* Slightly larger cells */
+    grid-template-rows: repeat(5, 80px);
+    gap: 8px;
+    background: radial-gradient(circle at center, #1a1a2e 0%, #16213e 100%);
+    padding: 20px;
+    border-radius: 20px;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 242, 255, 0.1);
+    border: 1px solid var(--glass-border);
+    position: relative;
+    overflow: visible;
+}
+
+/* Grid Lines / Matrix Effect in background */
+.board-grid::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image:
+        linear-gradient(rgba(0, 242, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 242, 255, 0.05) 1px, transparent 1px);
+    background-size: 80px 80px;
+    pointer-events: none;
+    z-index: 0;
+    border-radius: 20px;
+}
+
+.grid-cell {
+    position: relative;
+    z-index: 1;
+    width: 80px;
+    height: 80px;
+    transition: transform 0.3s ease;
+}
+
+.grid-cell:hover {
+    transform: scale(1.05);
+    z-index: 2;
+}
+
+.tile-svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
+}
+
+.tile-bg {
+    fill: rgba(0, 0, 0, 0.3);
+    stroke: rgba(255, 255, 255, 0.05);
+    stroke-width: 0.5;
+}
+
+.path-segment {
+    stroke: var(--neon-blue);
+    stroke-width: 12;
+    stroke-linecap: round;
+    filter: drop-shadow(0 0 5px var(--neon-blue));
+    transition: stroke 0.3s ease;
+}
+
+/* Specific path colors by player role or just varied for life */
+.robber-path .path-segment {
+    stroke: var(--neon-pink);
+    filter: drop-shadow(0 0 8px var(--neon-pink));
+}
+
+.cop-path .path-segment {
+    stroke: var(--neon-blue);
+}
+
+.entrance-tile .path-segment {
+    stroke: var(--neon-green);
+    filter: drop-shadow(0 0 10px var(--neon-green));
+    animation: pulse-glow 2s infinite alternate;
+}
+
+@keyframes pulse-glow {
+    from {
+        filter: drop-shadow(0 0 5px var(--neon-green));
+        opacity: 0.8;
+    }
+
+    to {
+        filter: drop-shadow(0 0 15px var(--neon-green));
+        opacity: 1;
+    }
+}
+
+.tile-label {
+    fill: var(--neon-green);
+    font-size: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.vault-hidden {
+    fill: #2d3436;
+    stroke: var(--neon-purple);
+    stroke-width: 2;
+    filter: drop-shadow(0 0 5px var(--neon-purple));
+}
+
+.vault-label-small {
+    fill: var(--neon-purple);
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.vault-tile.revealed {
+    animation: reveal-scale 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes reveal-scale {
+    0% {
+        transform: scale(0.5);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.vault-box {
+    fill: #222;
+    stroke: gold;
+    stroke-width: 3;
+}
+
+.vault-icon {
+    font-size: 24px;
+}
+
+.dead-end-marker {
+    fill: #ff4757;
+    filter: drop-shadow(0 0 3px #ff4757);
+}
+
+.money-glimmer {
+    animation: glimmer 1s infinite alternate;
+}
+
+@keyframes glimmer {
+    from {
+        filter: brightness(1);
+    }
+
+    to {
+        filter: brightness(1.5) drop-shadow(0 0 10px gold);
+    }
+}
+
+/* Hover preview for placement */
+.grid-cell-empty:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px dashed var(--neon-blue);
+    cursor: pointer;
+}

@@ -7,6 +7,7 @@ import HandView from './components/HandView';
 import GameOver from './components/GameOver';
 import Notification from './components/Notification';
 import './App.css';
+import './BoardRemodel.css';
 
 const socket = io('http://192.168.4.176:3001');
 
@@ -137,7 +138,6 @@ function App() {
 
   return (
     <div className="app-container">
-      <div className="scanline-effect"></div>
       <Notification notifications={notifications} onRemove={removeNotification} />
 
       {winner && (

@@ -17,21 +17,22 @@ const TileRenderer = ({ tile, isSmall = false }) => {
         paths.push(<rect key="bg" x="0" y="0" width="100" height="100" className="tile-bg" />);
 
         if (tile.type === 'entrance') {
-            paths.push(<text key="label" x="50" y="50" textAnchor="middle" dominantBaseline="middle" className="tile-label">ENTRANCE</text>);
+            paths.push(<text key="label" x="50" y="85" textAnchor="middle" dominantBaseline="middle" className="tile-label">HEADQUARTERS</text>);
+            paths.push(<text key="icon" x="50" y="45" textAnchor="middle" dominantBaseline="middle" className="entrance-icon">🏢</text>);
         }
 
         if (tile.type === 'vault') {
             if (tile.revealed) {
                 paths.push(
                     <g key="vault-revealed" className={tile.hasMoney ? "money-glimmer" : ""}>
-                        <rect x="20" y="20" width="60" height="60" rx="4" className="vault-box" />
+                        <rect x="25" y="25" width="50" height="50" rx="4" className="vault-box" />
                         <text x="50" y="55" textAnchor="middle" dominantBaseline="middle" className="vault-icon">
                             {tile.hasMoney ? "💰" : "❌"}
                         </text>
                     </g>
                 );
             } else {
-                paths.push(<rect key="vault-hidden" x="20" y="20" width="60" height="60" rx="4" className="vault-hidden" />);
+                paths.push(<rect key="vault-hidden" x="25" y="25" width="50" height="50" rx="4" className="vault-hidden" />);
                 paths.push(<text key="vault-label" x="50" y="50" textAnchor="middle" dominantBaseline="middle" className="vault-label-small">VAULT</text>);
             }
             return (
@@ -41,11 +42,17 @@ const TileRenderer = ({ tile, isSmall = false }) => {
             );
         }
 
-        // Path segments
-        if (top) paths.push(<line key="t" x1="50" y1="50" x2="50" y2="0" className="path-segment" />);
-        if (bottom) paths.push(<line key="b" x1="50" y1="50" x2="50" y2="100" className="path-segment" />);
-        if (left) paths.push(<line key="l" x1="50" y1="50" x2="0" y2="50" className="path-segment" />);
-        if (right) paths.push(<line key="r" x1="50" y1="50" x2="100" y2="50" className="path-segment" />);
+        // Path segments (Dual layer for Street look)
+        const renderSegment = (dir, x1, y1, x2, y2) => [
+            <line key={`sw-${dir}`} x1={x1} y1={y1} x2={x2} y2={y2} className="sidewalk" />,
+            <line key={`p-${dir}`} x1={x1} y1={y1} x2={x2} y2={y2} className="path-segment" />,
+            <line key={`m-${dir}`} x1={x1} y1={y1} x2={x2} y2={y2} className="road-marking" />
+        ];
+
+        if (top) paths.push(...renderSegment('t', 50, 50, 50, 0));
+        if (bottom) paths.push(...renderSegment('b', 50, 50, 50, 100));
+        if (left) paths.push(...renderSegment('l', 50, 50, 0, 50));
+        if (right) paths.push(...renderSegment('r', 50, 50, 100, 50));
 
         if (deadEnd) {
             paths.push(<circle key="dead" cx="50" cy="50" r="8" className="dead-end-marker" />);

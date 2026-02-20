@@ -66,47 +66,71 @@
 }
 
 .path-segment {
-    stroke: var(--neon-blue);
-    stroke-width: 12;
+    stroke: #2d3436;
+    /* Asphalt Grey */
+    stroke-width: 24;
+    /* Wider road */
+    stroke-linecap: butt;
+    /* Flat ends for roads */
+    filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.8));
+}
+
+.road-marking {
+    stroke: #f1c40f;
+    /* Road Yellow */
+    stroke-width: 2;
+    stroke-dasharray: 8, 8;
     stroke-linecap: round;
-    filter: drop-shadow(0 0 5px var(--neon-blue));
-    transition: stroke 0.3s ease;
+    pointer-events: none;
+}
+
+.sidewalk {
+    stroke: #636e72;
+    stroke-width: 28;
+    stroke-linecap: butt;
+    opacity: 0.3;
 }
 
 /* Specific path colors by player role or just varied for life */
-.robber-path .path-segment {
-    stroke: var(--neon-pink);
-    filter: drop-shadow(0 0 8px var(--neon-pink));
+.robber-path .road-marking {
+    stroke: #ff7675;
+    /* Slightly redder yellow for robbers? No, let's keep it classic road but glowier */
+    filter: drop-shadow(0 0 5px #ff7675);
 }
 
-.cop-path .path-segment {
-    stroke: var(--neon-blue);
+.cop-path .road-marking {
+    stroke: #74b9ff;
+    filter: drop-shadow(0 0 5px #74b9ff);
 }
 
 .entrance-tile .path-segment {
-    stroke: var(--neon-green);
-    filter: drop-shadow(0 0 10px var(--neon-green));
+    stroke: #34495e;
+    /* Polished road/plaza */
     animation: pulse-glow 2s infinite alternate;
 }
 
 @keyframes pulse-glow {
     from {
-        filter: drop-shadow(0 0 5px var(--neon-green));
-        opacity: 0.8;
+        filter: drop-shadow(0 0 5px rgba(57, 255, 20, 0.3));
     }
 
     to {
-        filter: drop-shadow(0 0 15px var(--neon-green));
-        opacity: 1;
+        filter: drop-shadow(0 0 15px rgba(57, 255, 20, 0.6));
     }
 }
 
-.tile-label {
+.entrance-icon {
     fill: var(--neon-green);
-    font-size: 10px;
-    font-weight: bold;
+    font-size: 24px;
+}
+
+.tile-label {
+    fill: #fff;
+    font-size: 9px;
+    font-weight: 900;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 2px;
+    filter: drop-shadow(0 0 2px #000);
 }
 
 .vault-hidden {

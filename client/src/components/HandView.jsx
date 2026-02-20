@@ -1,6 +1,8 @@
+import React, { useState } from 'react';
 import Board from './Board';
+import TileRenderer from './TileRenderer';
 
-const HandView = ({ hand, board, isMyTurn, players, onPlaceCard, onPlayAction }) => {
+const HandView = ({ hand, board, isMyTurn, players, tools, onPlaceCard, onPlayAction, onDiscardCard }) => {
     const [selectedCardId, setSelectedCardId] = useState(null);
     const [targetPlayerId, setTargetPlayerId] = useState(players[0]?.id || '');
 
@@ -39,8 +41,17 @@ const HandView = ({ hand, board, isMyTurn, players, onPlaceCard, onPlayAction })
 
     return (
         <div className={`hand-view-container ${isMyTurn ? 'active-turn' : ''}`}>
-            <div className="turn-indicator">
-                {isMyTurn ? "🚨 YOUR MOVE, AGENT" : "🛰️ WAITING FOR INTEL..."}
+            <div className="hand-header">
+                <div className="turn-indicator">
+                    {isMyTurn ? "🚨 YOUR MOVE, AGENT" : "🛰️ WAITING FOR INTEL..."}
+                </div>
+                {tools && (
+                    <div className="my-tools-status">
+                        <span title="Flashlight" className={tools.flashlight ? 'tool-ok' : 'tool-broken'}>🔦</span>
+                        <span title="Drill" className={tools.drill ? 'tool-ok' : 'tool-broken'}>⚙️</span>
+                        <span title="Map" className={tools.map ? 'tool-ok' : 'tool-broken'}>🗺️</span>
+                    </div>
+                )}
             </div>
 
             {board && isMyTurn && selectedCardId && (
@@ -72,7 +83,12 @@ const HandView = ({ hand, board, isMyTurn, players, onPlaceCard, onPlayAction })
 
             {selectedCardId && isMyTurn && (
                 <div className="placement-controls glass-panel">
-                    <h3>{selectedCard.type === 'action' ? `INITIATE: ${selectedCard.label}` : 'CONSTRUCT PATH'}</h3>
+                    <div className="placement-header">
+                        <h3>{selectedCard.type === 'action' ? `INITIATE: ${selectedCard.label}` : 'CONSTRUCT PATH'}</h3>
+                        <button className="discard-btn" onClick={() => onDiscardCard(selectedCard.id)} title="Discard this card and skip turn">
+                            🗑️ DISCARD
+                        </button>
+                    </div>
 
                     <div className="targeting-options">
                         {(selectedCard.action === 'sabotage' || selectedCard.action === 'repair') && (

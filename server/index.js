@@ -351,8 +351,8 @@ io.on('connection', (socket) => {
       room.players.forEach((p, i) => {
         p.role = roles[i];
         p.hand = [];
-        for (let j = 0; j < handSize; j++) if (room.deck.length > 0) p.hand.push(room.deck.pop());
-        if (!p.isAI) io.to(p.id).emit('game_started', { role: p.role, hand: p.hand });
+        if (room.deck.length > 0) p.hand.push(room.deck.pop());
+        if (!p.isAI) io.to(p.id).emit('game_started', { role: p.role, hand: p.hand, tools: p.tools });
       });
 
       io.to(room.host).emit('board_update', room.grid);
@@ -479,6 +479,40 @@ io.on('connection', (socket) => {
         }
       } else {
         socket.emit('error', 'Action failed');
+      }
+    }
+  });
+
+  socket.on('discard_card', ({ roomCode, cardId }) => {
+    if (rooms[roomCode] && rooms[roomCode].gameStarted) {
+      const room = rooms[roomCode];
+      const currentPlayer = room.players[room.currentPlayerIndex];
+      if (socket.id !== currentPlayer.id) return socket.emit('error', 'Not your turn!');
+
+      const cardToDiscard = currentPlayer.hand.find(c => c.id === cardId);
+      if (cardToDiscard) {
+        currentPlayer.hand = currentPlayer.hand.filter(h => h.id !== cardId);
+        if (room.deck.length > 0) currentPlayer.hand.push(room.deck.pop());
+        socket.emit('hand_update', currentPlayer.hand);
+        socket.emit('your_turn', false);
+
+        room.currentPlayerIndex = (room.currentPlayerIndex + 1) % room.players.length;
+        const nextPlayer = room.players[room.currentPlayerIndex];
+
+        io.to(roomCode).emit('turn_update', {
+          currentPlayer: nextPlayer.name,
+          deckCount: room.deck.length,
+          players: room.players.map(p => ({ id: p.id, name: p.name, tools: p.tools, isAI: p.isAI }))
+        });
+
+        if (nextPlayer.isAI) handleAITurn(room, roomCode);
+        else io.to(nextPlayer.id).emit('your_turn', true);
+
+        // Tie-break check
+        if (room.deck.length === 0 && room.players.every(p => p.hand.length === 0) && !room.winner) {
+          room.winner = 'Cops';
+          io.to(roomCode).emit('game_over', { winner: 'Cops' });
+        }
       }
     }
   });

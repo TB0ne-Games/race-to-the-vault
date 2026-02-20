@@ -25,6 +25,7 @@ function App() {
   const [winner, setWinner] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [aiDifficulty, setAiDifficulty] = useState(5);
+  const [myTools, setMyTools] = useState({ flashlight: true, drill: true, map: true });
 
   const addNotification = (message, type = 'info') => {
     const id = Date.now();
@@ -53,9 +54,10 @@ function App() {
       setBoard(updatedBoard);
     });
 
-    socket.on('game_started', ({ role, hand }) => {
+    socket.on('game_started', ({ role, hand, tools }) => {
       setRole(role);
       setHand(hand);
+      if (tools) setMyTools(tools);
       setView('hand');
     });
 
@@ -69,7 +71,11 @@ function App() {
 
     socket.on('turn_update', (info) => {
       setTurnInfo(info);
-      if (info.players) setRoomPlayers(info.players);
+      if (info.players) {
+        setRoomPlayers(info.players);
+        const me = info.players.find(p => p.id === socket.id);
+        if (me && me.tools) setMyTools(me.tools);
+      }
     });
 
     socket.on('game_over', ({ winner }) => {
@@ -235,11 +241,15 @@ function App() {
                 isMyTurn={isMyTurn}
                 players={roomPlayers}
                 board={board}
+                tools={myTools}
                 onPlaceCard={(r, c, card) => {
                   socket.emit('place_card', { roomCode, r, c, card });
                 }}
                 onPlayAction={(actionCard, targetId, r, c) => {
                   socket.emit('play_action', { roomCode, actionCard, targetId, r, c });
+                }}
+                onDiscardCard={(cardId) => {
+                  socket.emit('discard_card', { roomCode, cardId });
                 }}
               />
             </div>

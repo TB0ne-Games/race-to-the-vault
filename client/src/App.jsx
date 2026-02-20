@@ -204,7 +204,10 @@ function App() {
           onPlaceCard={(r, c, card) => socket.emit('place_card', { roomCode, r, c, card })}
           onPlayAction={(actionCard, targetId, r, c) => socket.emit('play_action', { roomCode, actionCard, targetId, r, c })}
           roomPlayers={roomPlayers}
-          onJoinAsPlayer={(name) => joinRoom(name, roomCode)}
+          onJoinAsPlayer={(name) => {
+            joinRoom(name, roomCode);
+            handleStartGame(roomCode);
+          }}
         />
       )}
 

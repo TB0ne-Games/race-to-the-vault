@@ -57,25 +57,8 @@ const HandView = ({ hand, isMyTurn, players, onPlaceCard, onPlayAction }) => {
             </div>
 
             {selectedCardId && isMyTurn && (
-                <div className="placement-controls glass-panel" style={{
-                    marginTop: '2rem',
-                    padding: '2rem',
-                    border: '1px solid var(--primary-glow)',
-                    position: 'relative',
-                    overflow: 'hidden'
-                }}>
-                    <div style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '4px',
-                        height: '100%',
-                        background: 'var(--primary)'
-                    }}></div>
-
-                    <h3 className="mono" style={{ textTransform: 'uppercase', letterSpacing: '4px', marginBottom: '1.5rem', fontSize: '1.2rem' }}>
-                        {selectedCard.type === 'action' ? `PROTOCOL: ${selectedCard.label}` : 'SATELLITE LINK: DEPLOY PATH'}
-                    </h3>
+                <div className="placement-controls glass-panel">
+                    <h3>{selectedCard.type === 'action' ? `INITIATE: ${selectedCard.label}` : 'CONSTRUCT PATH'}</h3>
 
                     <div className="targeting-options">
                         {(selectedCard.type !== 'action' || selectedCard.action === 'map' || selectedCard.action === 'dynamite') && (

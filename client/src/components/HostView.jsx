@@ -55,24 +55,26 @@ const HostView = ({ roomCode, players, gameStarted, onStartGame, onAddAI, onRemo
                 <div className="glass-panel lobby-players" style={{ maxWidth: '800px', margin: '0 auto' }}>
                     <h2 style={{ textAlign: 'center', marginBottom: '2rem' }}>SECURE LOBBY</h2>
                     <div className="players-grid">
-                        <div key={player.id} className={`player-card ${player.isAI ? 'is-ai' : ''}`}>
-                            <div className="status-indicator"></div>
-                            <span className="player-name-wrapper">
-                                {player.name} {player.isAI ? '🤖' : ''}
-                            </span>
-                            {player.isAI && (
-                                <button
-                                    className="remove-ai-btn"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        onRemoveAI(roomCode, player.id);
-                                    }}
-                                    title="Remove Agent"
-                                >
-                                    &times;
-                                </button>
-                            )}
-                        </div>
+                        {players.map(player => (
+                            <div key={player.id} className={`player-card ${player.isAI ? 'is-ai' : ''}`}>
+                                <div className="status-indicator"></div>
+                                <span className="player-name-wrapper">
+                                    {player.name} {player.isAI ? '🤖' : ''}
+                                </span>
+                                {player.isAI && (
+                                    <button
+                                        className="remove-ai-btn"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onRemoveAI(roomCode, player.id);
+                                        }}
+                                        title="Remove Agent"
+                                    >
+                                        &times;
+                                    </button>
+                                )}
+                            </div>
+                        ))}
                     </div>
                     {players.length < 3 && <p className="hint" style={{ textAlign: 'center', marginTop: '2rem', opacity: 0.6 }}>MINIMUM 3 AGENTS REQUIRED TO START</p>}
                 </div>

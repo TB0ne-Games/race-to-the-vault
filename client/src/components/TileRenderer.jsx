@@ -41,18 +41,30 @@ const TileRenderer = ({ tile, isSmall = false }) => {
             );
         }
 
-        // Path segments
-        if (top) paths.push(<line key="t" x1="50" y1="50" x2="50" y2="0" className="path-segment" />);
-        if (bottom) paths.push(<line key="b" x1="50" y1="50" x2="50" y2="100" className="path-segment" />);
-        if (left) paths.push(<line key="l" x1="50" y1="50" x2="0" y2="50" className="path-segment" />);
-        if (right) paths.push(<line key="r" x1="50" y1="50" x2="100" y2="50" className="path-segment" />);
+        // Path segments with entry animations
+        const segmentStyle = {
+            strokeDasharray: 50,
+            strokeDashoffset: 50,
+            animation: 'drawPath 0.8s ease-out forwards'
+        };
+
+        if (top) paths.push(<line key="t" x1="50" y1="50" x2="50" y2="0" className="path-segment" style={segmentStyle} />);
+        if (bottom) paths.push(<line key="b" x1="50" y1="50" x2="50" y2="100" className="path-segment" style={segmentStyle} />);
+        if (left) paths.push(<line key="l" x1="50" y1="50" x2="0" y2="50" className="path-segment" style={segmentStyle} />);
+        if (right) paths.push(<line key="r" x1="50" y1="50" x2="100" y2="50" className="path-segment" style={segmentStyle} />);
 
         if (deadEnd) {
-            paths.push(<circle key="dead" cx="50" cy="50" r="8" className="dead-end-marker" />);
+            paths.push(<circle key="dead" cx="50" cy="50" r="10" className="dead-end-marker" />);
+            paths.push(<text key="dead-x" x="50" y="52" textAnchor="middle" dominantBaseline="middle" fill="#000" fontSize="12" fontWeight="bold">X</text>);
         }
 
         return (
             <svg viewBox="0 0 100 100" className={`tile-svg ${tile.type || 'path'}-tile`}>
+                <defs>
+                    <style>
+                        {`@keyframes drawPath { to { stroke-dashoffset: 0; } }`}
+                    </style>
+                </defs>
                 {paths}
             </svg>
         );
@@ -61,6 +73,19 @@ const TileRenderer = ({ tile, isSmall = false }) => {
     return (
         <div className={`tile-container ${isSmall ? 'small' : ''}`}>
             {renderPath()}
+            {!isSmall && (
+                <div className="coord-overlay" style={{
+                    position: 'absolute',
+                    top: '4px',
+                    left: '4px',
+                    fontSize: '8px',
+                    color: 'var(--text-dim)',
+                    fontFamily: 'var(--font-mono)',
+                    opacity: 0.5
+                }}>
+                    POS_SEC_0{Math.floor(Math.random() * 100)}
+                </div>
+            )}
         </div>
     );
 };

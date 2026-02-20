@@ -137,6 +137,7 @@ function App() {
 
   return (
     <div className="app-container">
+      <div className="scanline-effect"></div>
       <Notification notifications={notifications} onRemove={removeNotification} />
 
       {winner && (
